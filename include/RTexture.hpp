@@ -21,15 +21,19 @@ public:
   void ModColor(Uint8 r, Uint8 g, Uint8 b);
   void ModAlpha(Uint8 a);
 
-  void Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip);
+  void Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip = NULL,
+              bool center = false);
   void Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
               double angle, SDL_Point *center, SDL_RendererFlip flip);
   void Render(SDL_Renderer *renderer, int x, int y, int w, int h,
-              SDL_Rect *clip);
+              SDL_Rect *clip = NULL);
 
   int GetWidth();
   int GetHeight();
+  int GetWidthUnscaled();
+  int GetHeightUnscaled();
   void SetScale(int nScale);
+  SDL_Point *GetCenter();
 
 private:
   SDL_Texture *texture;

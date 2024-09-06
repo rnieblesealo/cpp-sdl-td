@@ -8,6 +8,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(game
+  src/RTexture.cpp
+  src/RSprite.cpp
+  src/Rat.cpp
   src/main.cpp
 )
 

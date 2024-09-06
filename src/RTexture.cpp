@@ -91,8 +91,7 @@ void RTexture::ModColor(Uint8 r, Uint8 g, Uint8 b) {
 
 void RTexture::ModAlpha(Uint8 a) { SDL_SetTextureAlphaMod(texture, a); }
 
-void RTexture::Render(SDL_Renderer *renderer, int x, int y,
-                      SDL_Rect *clip = NULL) {
+void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip, bool center) {
 
   renderDest = {x, y, width, height};
 
@@ -103,6 +102,11 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y,
 
   renderDest.w *= scale;
   renderDest.h *= scale;
+
+  if (center){
+    renderDest.x -= renderDest.w / 2;
+    renderDest.y -= renderDest.h / 2;
+  }
 
   SDL_RenderCopy(renderer, texture, clip, &renderDest);
 }
@@ -123,7 +127,7 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
 }
 
 void RTexture::Render(SDL_Renderer *renderer, int x, int y, int w, int h,
-                      SDL_Rect *clip = NULL) {
+                      SDL_Rect *clip) {
 
   renderDest = {x, y, w, h};
 
@@ -144,6 +148,14 @@ int RTexture::GetHeight() {
   }
 
   return renderDest.h;
+}
+
+int RTexture::GetWidthUnscaled(){
+  return width;
+}
+
+int RTexture::GetHeightUnscaled(){
+  return height;
 }
 
 void RTexture::SetScale(int nScale) { scale = nScale; }
