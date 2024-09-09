@@ -81,7 +81,7 @@ bool Init() {
     success = false;
   }
 
-  gWindow = SDL_CreateWindow("Cats vs. Robo-Enemys!", SDL_WINDOWPOS_CENTERED,
+  gWindow = SDL_CreateWindow("Dower Tefense", SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH,
                              SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 
