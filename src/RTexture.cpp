@@ -1,6 +1,7 @@
 #include "RTexture.hpp"
 
 #include <SDL_image.h>
+#include <SDL_render.h>
 
 RTexture::RTexture() {
   texture = NULL;

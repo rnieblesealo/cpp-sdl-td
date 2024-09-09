@@ -1,6 +1,6 @@
+#include "Enemy.hpp"
 #include "RSprite.hpp"
 #include "RTexture.hpp"
-#include "Enemy.hpp"
 
 #include <SDL.h>
 #include <SDL_error.h>
@@ -8,6 +8,7 @@
 #include <SDL_image.h>
 #include <SDL_keycode.h>
 #include <SDL_mixer.h>
+#include <SDL_mouse.h>
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
 #include <SDL_ttf.h>
@@ -31,17 +32,27 @@ float targetFps = 120;
 float dt = 0;
 
 RTexture tEnemy0;
+RTexture tEnemy0Weapon;
 
 SDL_Rect tEnemy0Clips[] = {{0, 0, 128, 128}};
+SDL_Rect tEnemy0WeaponClips[] = {
+    {0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128}, {2 * 128, 0, 128, 128},
+    {3 * 128, 0, 128, 128}, {4 * 128, 0, 128, 128}, {5 * 128, 0, 128, 128},
+    {6 * 128, 0, 128, 128}, {7 * 128, 0, 128, 128}};
 
 RSprite sEnemy0(&tEnemy0, tEnemy0Clips, 1);
+RSprite sEnemy0Weapon(&tEnemy0Weapon, tEnemy0WeaponClips, 8);
 
-Enemy testEnemy(&sEnemy0);
+Enemy enemy0(&sEnemy0, &sEnemy0Weapon);
 
 // maps
 RTexture tMap0;
 const int MAP_0_PATH_LENGTH = 13;
 SDL_Point map0Path[MAP_0_PATH_LENGTH];
+
+// other
+int mouseX = 0;
+int mouseY = 0;
 
 void PrintError() { printf("%s\n", SDL_GetError()); }
 
@@ -117,7 +128,8 @@ bool LoadMedia() {
     success = false;
   }
 
-  // set map points, in unscaled coords (e.g. 10, 7 refers to 10 tiles x, 7 tiles y)
+  // set map points, in unscaled coords (e.g. 10, 7 refers to 10 tiles x, 7
+  // tiles y)
   map0Path[0] = {0, 5};
   map0Path[1] = {8, 5};
   map0Path[2] = {8, 2};
@@ -132,7 +144,7 @@ bool LoadMedia() {
   map0Path[11] = {8, 10};
   map0Path[12] = {8, 12};
 
-  for (int i = 0; i < MAP_0_PATH_LENGTH; ++i){
+  for (int i = 0; i < MAP_0_PATH_LENGTH; ++i) {
     // scale up point coords to match screen coords
     map0Path[i].x *= TILE_W;
     map0Path[i].y *= TILE_H;
@@ -142,16 +154,23 @@ bool LoadMedia() {
     map0Path[i].y -= (int)SDL_roundf((float)TILE_H / 2);
   }
 
-  if (!tEnemy0.LoadFromFile(gRenderer, "../assets/r-tank-body.png", {255, 255, 255})) {
+  if (!tEnemy0.LoadFromFile(gRenderer, "../assets/r-tank-body.png",
+                            {255, 255, 255})) {
     PrintError();
     success = false;
   }
 
-  // feed map to rat
-  testEnemy.SetPath(map0Path, MAP_0_PATH_LENGTH);
+  if (!tEnemy0Weapon.LoadFromFile(gRenderer, "../assets/r-tank-turret1.png",
+                                  {255, 255, 255})) {
+    PrintError();
+    success = false;
+  }
 
-  // place rat at start pos
-  testEnemy.SetPos(map0Path[0].x, map0Path[0].y);
+  // feed map to enemy
+  enemy0.SetPath(map0Path, MAP_0_PATH_LENGTH);
+
+  // place enemy at start pos
+  enemy0.SetPos(map0Path[0].x, map0Path[0].y);
 
   return success;
 }
@@ -208,18 +227,24 @@ int main() {
           quit = true;
         }
       }
+
+      // set mouse coords
+      else if (e.type == SDL_MOUSEMOTION){
+        SDL_GetMouseState(&mouseX, &mouseY);
+      }
     }
 
     // update code
-    testEnemy.MoveAlongPath();
+    enemy0.MoveAlongPath();
+    enemy0.SetTarget(mouseX, mouseY);
 
     SDL_RenderClear(gRenderer);
 
     // draw code
     tMap0.Render(gRenderer, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    testEnemy.Render(gRenderer, dt);
+    enemy0.Render(gRenderer, dt);
 
-    //DrawPath(gRenderer, map0Path, MAP_0_PATH_LENGTH);
+    // DrawPath(gRenderer, map0Path, MAP_0_PATH_LENGTH);
 
     SDL_RenderPresent(gRenderer);
 

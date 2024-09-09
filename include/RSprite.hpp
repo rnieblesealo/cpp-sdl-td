@@ -20,8 +20,7 @@ public:
   void SetFPS(int fps);
   void SetFrame(int f);
 
-  bool Render(SDL_Renderer *renderer, float dt, int x, int y,
-              bool center = false);
+  bool Render(SDL_Renderer *renderer, float dt, int x, int y, double angle = 0);
 
 private:
   RTexture *spriteSheet;

@@ -33,7 +33,6 @@ public:
   int GetWidthUnscaled();
   int GetHeightUnscaled();
   void SetScale(int nScale);
-  SDL_Point *GetCenter();
 
 private:
   SDL_Texture *texture;

@@ -1,6 +1,7 @@
 #include "RSprite.hpp"
 
 #include <SDL_rect.h>
+#include <SDL_render.h>
 
 RSprite::RSprite(RTexture *spriteSheet, SDL_Rect *spriteClips, int nFrames) {
   this->spriteSheet = spriteSheet;
@@ -41,7 +42,7 @@ void RSprite::SetFrame(int f) {
 }
 
 bool RSprite::Render(SDL_Renderer *renderer, float dt, int x, int y,
-                     bool center) {
+                     double angle) {
   movedFrame = false;
 
   if (fps > 0) {
@@ -60,7 +61,10 @@ bool RSprite::Render(SDL_Renderer *renderer, float dt, int x, int y,
     }
   }
 
-  spriteSheet->Render(renderer, x, y, &spriteClips[currentFrame], center);
+  // null rotates around center
+  spriteSheet->Render(renderer, x - spriteSheet->GetWidth() / 2,
+                      y - spriteSheet->GetHeight() / 2,
+                      &spriteClips[currentFrame], angle, NULL, SDL_FLIP_NONE);
 
   return movedFrame;
 }

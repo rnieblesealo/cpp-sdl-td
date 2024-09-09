@@ -1,9 +1,13 @@
 #include "Enemy.hpp"
 
+#include <SDL_render.h>
 #include <SDL_stdinc.h>
 
-Enemy::Enemy(RSprite *sprite) {
-  this->sprite = sprite;
+const double PI = 3.14159265358979323846;
+
+Enemy::Enemy(RSprite *bodySprite, RSprite *weaponSprite) {
+  this->bodySprite = bodySprite;
+  this->weaponSprite = weaponSprite;
 
   collider = {0, 0, 0, 0};
 
@@ -11,6 +15,8 @@ Enemy::Enemy(RSprite *sprite) {
   posY = 0;
   velX = 0;
   velY = 0;
+  targetX = -1;
+  targetY = -1;
   speed = 2;
 
   path = NULL;
@@ -34,6 +40,11 @@ void Enemy::SetPos(float x, float y) {
 void Enemy::SetVel(float vx, float vy) {
   velX = vx;
   velY = vy;
+}
+
+void Enemy::SetTarget(float x, float y) {
+  targetX = x;
+  targetY = y;
 }
 
 void Enemy::SetPath(SDL_Point *path, int pathLength) {
@@ -89,5 +100,17 @@ void Enemy::Render(SDL_Renderer *renderer, float dt) {
   int rPosX = (int)SDL_roundf(posX);
   int rPosY = (int)SDL_roundf(posY);
 
-  sprite->Render(renderer, dt, rPosX, rPosY, true);
+  // point weapon to target if latter is ok (coords must be positive)
+  double angle = 0;
+  if (targetX >= 0 && targetY >= 0) {
+    double dx = targetX - posX;
+    double dy = targetY - posY;
+
+    angle = SDL_atan2(dy, dx) * (180 / PI);
+  }
+
+  bodySprite->Render(renderer, dt, rPosX, rPosY, 0);
+
+  // 90 accounts for initial rotation
+  weaponSprite->Render(renderer, dt, rPosX, rPosY, angle + 90);
 }
