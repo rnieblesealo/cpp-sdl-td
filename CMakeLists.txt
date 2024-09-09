@@ -10,7 +10,7 @@ set(CMAKE_BUILD_TYPE Debug)
 add_executable(game
   src/RTexture.cpp
   src/RSprite.cpp
-  src/Rat.cpp
+  src/Enemy.cpp
   src/main.cpp
 )
 

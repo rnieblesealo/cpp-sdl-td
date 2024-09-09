@@ -1,6 +1,6 @@
 #include "RSprite.hpp"
 #include "RTexture.hpp"
-#include "Rat.hpp"
+#include "Enemy.hpp"
 
 #include <SDL.h>
 #include <SDL_error.h>
@@ -14,12 +14,12 @@
 #include <SDL_video.h>
 #include <chrono>
 
-const int SCREEN_TILE_WIDTH = 16;
-const int SCREEN_TILE_HEIGHT = 16;
-const int SCREEN_TILE_SCALE = 60;
+// these are set from a 12*12 tile level, with tile size being 128*128px
+const int SCREEN_WIDTH = 1536;
+const int SCREEN_HEIGHT = 1536;
 
-const int SCREEN_WIDTH = SCREEN_TILE_WIDTH * SCREEN_TILE_SCALE; 
-const int SCREEN_HEIGHT = SCREEN_TILE_HEIGHT * SCREEN_TILE_SCALE; 
+const int TILE_W = 128;
+const int TILE_H = 128;
 
 SDL_Window *gWindow = NULL;
 SDL_Surface *gWindowSurface = NULL;
@@ -30,18 +30,17 @@ std::chrono::time_point lastUpdateTime =
 float targetFps = 120;
 float dt = 0;
 
+RTexture tEnemy0;
+
+SDL_Rect tEnemy0Clips[] = {{0, 0, 128, 128}};
+
+RSprite sEnemy0(&tEnemy0, tEnemy0Clips, 1);
+
+Enemy testEnemy(&sEnemy0);
+
+// maps
 RTexture tMap0;
-
-RTexture tRat0;
-
-SDL_Rect tRat0Clips[] = {{0, 0, 9, 9}, {0, 9, 9, 9}};
-
-RSprite sRat0(&tRat0, tRat0Clips, 2);
-
-Rat testRat(&sRat0);
-
-// pathfollowing
-const int MAP_0_PATH_LENGTH = 12;
+const int MAP_0_PATH_LENGTH = 13;
 SDL_Point map0Path[MAP_0_PATH_LENGTH];
 
 void PrintError() { printf("%s\n", SDL_GetError()); }
@@ -71,7 +70,7 @@ bool Init() {
     success = false;
   }
 
-  gWindow = SDL_CreateWindow("Cats vs. Robo-Rats!", SDL_WINDOWPOS_CENTERED,
+  gWindow = SDL_CreateWindow("Cats vs. Robo-Enemys!", SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH,
                              SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 
@@ -118,46 +117,41 @@ bool LoadMedia() {
     success = false;
   }
 
-  if (!tRat0.LoadFromFile(gRenderer, "../assets/rat0.png")) {
+  // set map points, in unscaled coords (e.g. 10, 7 refers to 10 tiles x, 7 tiles y)
+  map0Path[0] = {0, 5};
+  map0Path[1] = {8, 5};
+  map0Path[2] = {8, 2};
+  map0Path[3] = {6, 2};
+  map0Path[4] = {6, 10};
+  map0Path[5] = {4, 10};
+  map0Path[6] = {4, 7};
+  map0Path[7] = {9, 7};
+  map0Path[8] = {9, 6};
+  map0Path[9] = {11, 6};
+  map0Path[10] = {11, 10};
+  map0Path[11] = {8, 10};
+  map0Path[12] = {8, 12};
+
+  for (int i = 0; i < MAP_0_PATH_LENGTH; ++i){
+    // scale up point coords to match screen coords
+    map0Path[i].x *= TILE_W;
+    map0Path[i].y *= TILE_H;
+
+    // center over tile size
+    map0Path[i].x -= (int)SDL_roundf((float)TILE_W / 2);
+    map0Path[i].y -= (int)SDL_roundf((float)TILE_H / 2);
+  }
+
+  if (!tEnemy0.LoadFromFile(gRenderer, "../assets/r-tank-body.png", {255, 255, 255})) {
     PrintError();
     success = false;
   }
 
-  tRat0.SetScale(10);
-
-  // map points, in unscaled coords
-  map0Path[0] = {10, 7};
-  map0Path[1] = {10, 2};
-  map0Path[2] = {6, 2};
-  map0Path[3] = {6, 12};
-  map0Path[4] = {2, 12};
-  map0Path[5] = {2, 9};
-  map0Path[6] = {12, 9};
-  map0Path[7] = {12, 7};
-  map0Path[8] = {14, 7};
-  map0Path[9] = {14, 12};
-  map0Path[10] = {10, 12};
-  map0Path[11] = {10, 15};
-
-  for (int i = 0; i < MAP_0_PATH_LENGTH; ++i) {
-    int tileSizeX =
-        (int)SDL_roundf((float)SCREEN_WIDTH / tMap0.GetWidthUnscaled());
-    int tileSizeY =
-        (int)SDL_roundf((float)SCREEN_HEIGHT / tMap0.GetHeightUnscaled());
-
-    printf("%d\n", tileSizeX); 
-
-    // scale up to match screen coords
-    map0Path[i].x *= tileSizeX;
-    map0Path[i].y *= tileSizeY;
-
-    // center over tile size
-    map0Path[i].x += (int)SDL_roundf((float)tileSizeX / 2);
-    map0Path[i].y += (int)SDL_roundf((float)tileSizeY / 2);
-  }
-
   // feed map to rat
-  testRat.SetPath(map0Path, MAP_0_PATH_LENGTH);
+  testEnemy.SetPath(map0Path, MAP_0_PATH_LENGTH);
+
+  // place rat at start pos
+  testEnemy.SetPos(map0Path[0].x, map0Path[0].y);
 
   return success;
 }
@@ -217,15 +211,15 @@ int main() {
     }
 
     // update code
-    testRat.MoveAlongPath();
+    testEnemy.MoveAlongPath();
 
     SDL_RenderClear(gRenderer);
 
     // draw code
     tMap0.Render(gRenderer, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    testRat.Render(gRenderer, dt);
+    testEnemy.Render(gRenderer, dt);
 
-    DrawPath(gRenderer, map0Path, MAP_0_PATH_LENGTH);
+    //DrawPath(gRenderer, map0Path, MAP_0_PATH_LENGTH);
 
     SDL_RenderPresent(gRenderer);
 

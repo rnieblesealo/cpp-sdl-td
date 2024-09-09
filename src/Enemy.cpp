@@ -1,7 +1,8 @@
-#include "Rat.hpp"
+#include "Enemy.hpp"
+
 #include <SDL_stdinc.h>
 
-Rat::Rat(RSprite *sprite) {
+Enemy::Enemy(RSprite *sprite) {
   this->sprite = sprite;
 
   collider = {0, 0, 0, 0};
@@ -10,14 +11,14 @@ Rat::Rat(RSprite *sprite) {
   posY = 0;
   velX = 0;
   velY = 0;
-  speed = 5;
+  speed = 2;
 
   path = NULL;
   pathLength = -1;
   nextPathPoint = -1;
 }
 
-SDL_Rect *Rat::GetCollider() {
+SDL_Rect *Enemy::GetCollider() {
   if (collider.x + collider.y + collider.w + collider.h == 0) {
     printf("Warning: Getting zero-size collider!\n");
   }
@@ -25,17 +26,17 @@ SDL_Rect *Rat::GetCollider() {
   return &collider;
 }
 
-void Rat::SetPos(float x, float y) {
+void Enemy::SetPos(float x, float y) {
   posX = x;
   posY = y;
 }
 
-void Rat::SetVel(float vx, float vy) {
+void Enemy::SetVel(float vx, float vy) {
   velX = vx;
   velY = vy;
 }
 
-void Rat::SetPath(SDL_Point *path, int pathLength) {
+void Enemy::SetPath(SDL_Point *path, int pathLength) {
   this->path = path;
   this->pathLength = pathLength;
 
@@ -43,9 +44,9 @@ void Rat::SetPath(SDL_Point *path, int pathLength) {
   nextPathPoint = 0;
 }
 
-void Rat::SetSpeed(int speed) { this->speed = speed; }
+void Enemy::SetSpeed(int speed) { this->speed = speed; }
 
-void Rat::MoveAlongPath() {
+void Enemy::MoveAlongPath() {
   if (path == NULL) {
     printf("No path defined!\n");
     return;
@@ -78,12 +79,12 @@ void Rat::MoveAlongPath() {
   Move();
 }
 
-void Rat::Move() {
+void Enemy::Move() {
   posX += (velX * speed);
   posY += (velY * speed);
 }
 
-void Rat::Render(SDL_Renderer *renderer, float dt) {
+void Enemy::Render(SDL_Renderer *renderer, float dt) {
   // round float pos to integer coords before rendering
   int rPosX = (int)SDL_roundf(posX);
   int rPosY = (int)SDL_roundf(posY);

@@ -3,9 +3,9 @@
 
 #include "RSprite.hpp"
 
-class Rat {
+class Enemy {
 public:
-  Rat(RSprite *sprite);
+  Enemy(RSprite *sprite);
 
   SDL_Rect *GetCollider();
 

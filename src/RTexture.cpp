@@ -41,7 +41,7 @@ bool RTexture::LoadFromRenderedText(SDL_Renderer *renderer, TTF_Font *font,
 
 #endif
 
-bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path) {
+bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path, SDL_Color key) {
 
   Free();
 
@@ -52,7 +52,7 @@ bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path) {
     return false;
   }
 
-  SDL_SetColorKey(lSurf, SDL_TRUE, SDL_MapRGB(lSurf->format, 0, 0, 0));
+  SDL_SetColorKey(lSurf, SDL_TRUE, SDL_MapRGB(lSurf->format, key.r, key.g, key.b));
 
   SDL_Texture *nTexture = SDL_CreateTextureFromSurface(renderer, lSurf);
 

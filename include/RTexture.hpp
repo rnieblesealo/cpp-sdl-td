@@ -15,7 +15,7 @@ public:
                             const char *text, SDL_Color tColor);
 #endif
 
-  bool LoadFromFile(SDL_Renderer *renderer, const char *path);
+  bool LoadFromFile(SDL_Renderer *renderer, const char *path, SDL_Color key = {0, 0, 0, 0});
   void Free();
   void SetBlendMode(SDL_BlendMode blendMode);
   void ModColor(Uint8 r, Uint8 g, Uint8 b);
