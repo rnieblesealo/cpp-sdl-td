@@ -11,6 +11,7 @@ add_executable(game
   src/RTexture.cpp
   src/RSprite.cpp
   src/Enemy.cpp
+  src/RGUI.cpp
   src/main.cpp
 )
 

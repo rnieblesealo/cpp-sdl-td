@@ -1,3 +1,6 @@
+### Notes
+Sprite postiions are relative to their center; everything else's position isn't
+
 ### Idea 
 Tower defense game, but you control the invaders instead!
 

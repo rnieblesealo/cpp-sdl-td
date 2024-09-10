@@ -1,7 +1,7 @@
 #include "Enemy.hpp"
 #include "RSprite.hpp"
 #include "RTexture.hpp"
-
+#include "RGUI.hpp"
 #include <SDL.h>
 #include <SDL_error.h>
 #include <SDL_events.h>
@@ -16,15 +16,24 @@
 #include <chrono>
 
 // these are set from a 12*12 tile level, with tile size being 128*128px
-const int SCREEN_WIDTH = 1536;
-const int SCREEN_HEIGHT = 1536;
+const int LEVEL_WIDTH = 1536;
+const int LEVEL_HEIGHT = 1536;
+
+const int GUI_WIDTH = 128 * 3;
+
+const int SCREEN_WIDTH = LEVEL_WIDTH + GUI_WIDTH;
+const int SCREEN_HEIGHT = LEVEL_HEIGHT;
 
 const int TILE_W = 128;
 const int TILE_H = 128;
 
+// this is independent
+const int FONT_SIZE = 24;
+
 SDL_Window *gWindow = NULL;
 SDL_Surface *gWindowSurface = NULL;
 SDL_Renderer *gRenderer = NULL;
+TTF_Font *gFont = NULL;
 
 std::chrono::time_point lastUpdateTime =
     std::chrono::high_resolution_clock::now();
@@ -53,6 +62,13 @@ SDL_Point map0Path[MAP_0_PATH_LENGTH];
 // other
 int mouseX = 0;
 int mouseY = 0;
+
+// layout group test
+RGraphic graphicA;
+RGraphic graphicB;
+RGraphic graphicC;
+
+RVerticalLayoutGroup vlGroup;
 
 void PrintError() { printf("%s\n", SDL_GetError()); }
 
@@ -122,6 +138,12 @@ bool Init() {
 
 bool LoadMedia() {
   bool success = true;
+
+  gFont = TTF_OpenFont("../assets/font.ttf", FONT_SIZE);
+  if (gFont == NULL) {
+    PrintError();
+    success = false;
+  }
 
   if (!tMap0.LoadFromFile(gRenderer, "../assets/map0.png")) {
     PrintError();
@@ -199,6 +221,25 @@ int main() {
   }
 
   // pre game loop code
+  graphicA.SetText(gRenderer, gFont, "A.");
+  graphicB.SetText(gRenderer, gFont, "B?");
+  graphicC.SetText(gRenderer, gFont, "C!");
+
+  graphicA.SetAreaColor({255, 0, 0, 255});
+  graphicB.SetAreaColor({0, 255, 0, 255});
+  graphicC.SetAreaColor({0, 0, 255, 255});
+
+  vlGroup.AddElement(&graphicA);
+  vlGroup.AddElement(&graphicB);
+  vlGroup.AddElement(&graphicC);
+
+  vlGroup.SetArea(LEVEL_WIDTH, 0, GUI_WIDTH, SCREEN_HEIGHT);
+  vlGroup.SetPadding(60, 60);
+  vlGroup.Apply();
+
+  SDL_Rect *x = graphicA.GetArea();
+
+  printf("%d %d %d %d\n", x->x, x->y, x->w, x->h);
 
   SDL_Event e;
 
@@ -229,7 +270,7 @@ int main() {
       }
 
       // set mouse coords
-      else if (e.type == SDL_MOUSEMOTION){
+      else if (e.type == SDL_MOUSEMOTION) {
         SDL_GetMouseState(&mouseX, &mouseY);
       }
     }
@@ -241,10 +282,9 @@ int main() {
     SDL_RenderClear(gRenderer);
 
     // draw code
-    tMap0.Render(gRenderer, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    tMap0.Render(gRenderer, 0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
     enemy0.Render(gRenderer, dt);
-
-    // DrawPath(gRenderer, map0Path, MAP_0_PATH_LENGTH);
+    vlGroup.Render(gRenderer);
 
     SDL_RenderPresent(gRenderer);
 
