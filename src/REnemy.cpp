@@ -14,13 +14,9 @@ RProjectile::RProjectile(RTexture *projectileTexture) {
   texture = projectileTexture;
 }
 
-int RProjectile::GetPosX(){
-  return posX;
-}
+int RProjectile::GetPosX() { return posX; }
 
-int RProjectile::GetPosY(){
-  return posY;
-}
+int RProjectile::GetPosY() { return posY; }
 
 void RProjectile::SetPos(int x, int y) {
   posX = x;
@@ -64,6 +60,10 @@ REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite) {
   nextPathPoint = -1;
 
   weaponAngle = 0;
+  fireRate = 1000000;
+
+  // start shoot timer right away
+  shootTimer.Start();
 }
 
 SDL_Rect *REnemy::GetCollider() {
@@ -138,18 +138,27 @@ void REnemy::Move() {
 }
 
 void REnemy::Shoot(RTexture *projectileTexture,
-                  std::vector<RProjectile *> &gRProjectiles) {
-  // don't forget to handle this dynamic mem!
-  RProjectile *n = new RProjectile(projectileTexture);
+                   std::vector<RProjectile *> &gRProjectiles, float dt) {
 
-  // calculate target using weapon angle
-  n->SetVel((int)(SDL_cosf(weaponAngle) * projectileSpeed),
-            (int)(SDL_sinf(weaponAngle) * projectileSpeed));
+  // this is the shoot timer
+  shootTimer.Tick(dt);
 
-  n->SetPos(this->posX, this->posY);
+  // fire on set interval
+  if (shootTimer.GetTime() > 1 / fireRate) {
+    // don't forget to handle this dynamic mem!
+    RProjectile *n = new RProjectile(projectileTexture);
 
-  // add this projectile to registry
-  gRProjectiles.push_back(n);
+    // calculate target using weapon angle
+    n->SetVel((int)(SDL_cosf(weaponAngle) * projectileSpeed),
+              (int)(SDL_sinf(weaponAngle) * projectileSpeed));
+
+    n->SetPos(this->posX, this->posY);
+
+    // add this projectile to registry
+    gRProjectiles.push_back(n);
+
+    shootTimer.Reset();
+  }
 }
 
 void REnemy::Render(SDL_Renderer *renderer, float dt) {

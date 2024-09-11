@@ -280,11 +280,11 @@ int main() {
       }
 
       // fire projectile when click
-      else if (e.type == SDL_MOUSEBUTTONDOWN) {
-        if (e.button.button == SDL_BUTTON_LEFT) {
-          enemy0.Shoot(&tBall, gProjectiles);
-        }
-      }
+      // else if (e.type == SDL_MOUSEBUTTONDOWN) {
+      //   if (e.button.button == SDL_BUTTON_LEFT) {
+      //     enemy0.Shoot(&tBall, gProjectiles);
+      //   }
+      // }
 
       // set mouse coords
       else if (e.type == SDL_MOUSEMOTION) {
@@ -295,6 +295,10 @@ int main() {
     // update code
     enemy0.MoveAlongPath();
     enemy0.SetTarget(mouseX, mouseY);
+
+    // this is kinda misleading; it seems like a call-once but it needs to run
+    // on update
+    enemy0.Shoot(&tBall, gProjectiles, dt);
 
     // clear offbounds projectiles
     for (int i = 0; i < gProjectiles.size(); ++i) {

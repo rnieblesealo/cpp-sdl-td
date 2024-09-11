@@ -3,6 +3,7 @@
 
 #include "RSprite.hpp"
 #include "RTexture.hpp"
+#include "RTimer.hpp"
 #include <SDL_render.h>
 #include <vector>
 
@@ -42,7 +43,7 @@ public:
   void Move();
   void MoveAlongPath();
 
-  void Shoot(RTexture *projectileTexture, std::vector<RProjectile *>& gRProjectiles);
+  void Shoot(RTexture *projectileTexture, std::vector<RProjectile *>& gRProjectiles, float dt);
 
   void Render(SDL_Renderer *renderer, float dt);
 
@@ -65,7 +66,11 @@ private:
   int nextPathPoint;
 
   // used for projectile motion, set by rendering
+  RTimer shootTimer;
   float weaponAngle;
+ 
+  // in seconds
+  float fireRate;
 };
 
 #endif

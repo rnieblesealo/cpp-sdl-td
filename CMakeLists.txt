@@ -12,6 +12,7 @@ add_executable(game
   src/RSprite.cpp
   src/REnemy.cpp
   src/RGUI.cpp
+  src/RTimer.cpp
   src/main.cpp
 )
 
