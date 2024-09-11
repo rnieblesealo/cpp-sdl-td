@@ -3,6 +3,8 @@
 
 #include "RTexture.hpp"
 #include <SDL.h>
+#include <SDL_events.h>
+#include <SDL_mouse.h>
 #include <SDL_ttf.h>
 #include <vector>
 
@@ -14,7 +16,8 @@ public:
 
   void SetDimensions(int w, int h);
   void SetPosition(int x, int y);
-  void SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color = {0, 0, 0, 255});
+  void SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text,
+               SDL_Color color = {0, 0, 0, 255});
   void SetAreaColor(SDL_Color color);
 
   void Render(SDL_Renderer *renderer);
@@ -25,6 +28,52 @@ private:
 
   SDL_Color areaColor;
   SDL_Color textColor;
+};
+
+class RButton {
+public:
+  RButton(RGraphic *graphic, void (*action)()) {
+    this->graphic = graphic;
+    this->onClick = action;
+  }
+  
+  void SetAction(void (*action)()){
+    this->onClick = action;
+  }
+
+  void SetGraphic(RGraphic *graphic){
+    this->graphic = graphic;
+  }
+  
+  void HandleEvent(SDL_Event *e) {
+
+    // check if mouse clicking
+    if (e->type == SDL_MOUSEBUTTONDOWN) {
+      // check if mouse in bounds
+      int mouseX = 0;
+      int mouseY = 0;
+
+      SDL_GetMouseState(&mouseX, &mouseY);
+
+      SDL_Rect *area = graphic->GetArea();
+
+      if (mouseX < area->x || mouseX > area->x + area->w || mouseY < 0 ||
+          mouseY > area->y + area->h) {
+        return;
+      }
+  
+      // check if press; if so run action
+      if (e->button.button == SDL_BUTTON_LEFT){
+        if (onClick != NULL){
+          onClick();
+        }
+      }
+    }
+  }
+
+private:
+  RGraphic *graphic;
+  void (*onClick)();
 };
 
 class RVerticalLayoutGroup {

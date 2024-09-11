@@ -60,7 +60,7 @@ REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite) {
   nextPathPoint = -1;
 
   weaponAngle = 0;
-  fireRate = 1000000;
+  fireRate = 10; 
 
   // start shoot timer right away
   shootTimer.Start();
@@ -73,6 +73,8 @@ SDL_Rect *REnemy::GetCollider() {
 
   return &collider;
 }
+
+bool REnemy::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
 
 void REnemy::SetPos(float x, float y) {
   posX = x;
@@ -100,16 +102,8 @@ void REnemy::SetPath(SDL_Point *path, int pathLength) {
 void REnemy::SetSpeed(int speed) { this->speed = speed; }
 
 void REnemy::MoveAlongPath() {
-  if (path == NULL) {
+  if (path == NULL || IsAtEndOfPath()) {
     printf("No path defined!\n");
-    return;
-  }
-
-  if (nextPathPoint >= pathLength) {
-    printf("Reached end of path\n");
-
-    SetVel(0, 0);
-
     return;
   }
 
@@ -129,10 +123,6 @@ void REnemy::MoveAlongPath() {
 
   SetVel(dx / d, dy / d);
 
-  Move();
-}
-
-void REnemy::Move() {
   posX += (velX * speed);
   posY += (velY * speed);
 }

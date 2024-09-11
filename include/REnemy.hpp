@@ -34,6 +34,8 @@ public:
 
   SDL_Rect *GetCollider();
 
+  bool IsAtEndOfPath();
+
   void SetPos(float x, float y);
   void SetVel(float vx, float vy);
   void SetTarget(float x, float y);

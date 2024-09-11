@@ -27,9 +27,10 @@ const int SCREEN_HEIGHT = LEVEL_HEIGHT;
 const int TILE_W = 128;
 const int TILE_H = 128;
 
-// this is independent
+// this isnt dependent on spritesheet
 const int FONT_SIZE = 24;
 
+// general stuff
 SDL_Window *gWindow = NULL;
 SDL_Surface *gWindowSurface = NULL;
 SDL_Renderer *gRenderer = NULL;
@@ -40,6 +41,12 @@ std::chrono::time_point lastUpdateTime =
 float targetFps = 120;
 float dt = 0;
 
+// maps
+RTexture tMap0;
+const int MAP_0_PATH_LENGTH = 13;
+SDL_Point map0Path[MAP_0_PATH_LENGTH];
+
+// enemies
 RTexture tEnemy0;
 RTexture tEnemy0Weapon;
 
@@ -52,25 +59,30 @@ SDL_Rect tEnemy0WeaponClips[] = {
 RSprite sEnemy0(&tEnemy0, tEnemy0Clips, 1);
 RSprite sEnemy0Weapon(&tEnemy0Weapon, tEnemy0WeaponClips, 8);
 
-REnemy enemy0(&sEnemy0, &sEnemy0Weapon);
+std::vector<REnemy *> gEnemies;
 
-// maps
-RTexture tMap0;
-const int MAP_0_PATH_LENGTH = 13;
-SDL_Point map0Path[MAP_0_PATH_LENGTH];
+void SpawnEnemy() {
+  REnemy *newEnemy = new REnemy(&sEnemy0, &sEnemy0Weapon);
 
-// other
+  // make enemy follow path
+  newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
+  newEnemy->SetPos(map0Path[0].x, map0Path[0].y);
+
+  // add enemy to reg
+  gEnemies.push_back(newEnemy);
+}
+
+// event handling
 int mouseX = 0;
 int mouseY = 0;
 
-// layout group test
+// gui
 RGraphic graphicA;
-RGraphic graphicB;
-RGraphic graphicC;
+RButton buttonA(&graphicA, &SpawnEnemy);
 
 RVerticalLayoutGroup vlGroup;
 
-// projectiles test
+// projectiles
 RTexture tBall;
 std::vector<RProjectile *> gProjectiles;
 
@@ -200,12 +212,6 @@ bool LoadMedia() {
     success = false;
   }
 
-  // feed map to enemy
-  enemy0.SetPath(map0Path, MAP_0_PATH_LENGTH);
-
-  // place enemy at start pos
-  enemy0.SetPos(map0Path[0].x, map0Path[0].y);
-
   return success;
 }
 
@@ -232,24 +238,17 @@ int main() {
     return 1;
   }
 
-  // pre game loop code
-  graphicA.SetText(gRenderer, gFont, "A.");
-  graphicB.SetText(gRenderer, gFont, "B?");
-  graphicC.SetText(gRenderer, gFont, "C!");
-
+  // setup button graphics
   graphicA.SetAreaColor({255, 0, 0, 255});
-  graphicB.SetAreaColor({0, 255, 0, 255});
-  graphicC.SetAreaColor({0, 0, 255, 255});
 
+  // setup button
+
+  // setup layout group
   vlGroup.AddElement(&graphicA);
-  vlGroup.AddElement(&graphicB);
-  vlGroup.AddElement(&graphicC);
 
   vlGroup.SetArea(LEVEL_WIDTH, 0, GUI_WIDTH, SCREEN_HEIGHT);
   vlGroup.SetPadding(60, 60);
   vlGroup.Apply();
-
-  SDL_Rect *x = graphicA.GetArea();
 
   SDL_Event e;
 
@@ -268,7 +267,6 @@ int main() {
     }
 
     while (SDL_PollEvent(&e)) {
-      // event handling
       if (e.type == SDL_QUIT) {
         quit = true;
       }
@@ -279,55 +277,68 @@ int main() {
         }
       }
 
-      // fire projectile when click
-      // else if (e.type == SDL_MOUSEBUTTONDOWN) {
-      //   if (e.button.button == SDL_BUTTON_LEFT) {
-      //     enemy0.Shoot(&tBall, gProjectiles);
-      //   }
-      // }
-
-      // set mouse coords
+      // set target mouse coords; will be changed
       else if (e.type == SDL_MOUSEMOTION) {
         SDL_GetMouseState(&mouseX, &mouseY);
       }
+
+      buttonA.HandleEvent(&e);
     }
 
-    // update code
-    enemy0.MoveAlongPath();
-    enemy0.SetTarget(mouseX, mouseY);
-
-    // this is kinda misleading; it seems like a call-once but it needs to run
-    // on update
-    enemy0.Shoot(&tBall, gProjectiles, dt);
+    // WARNING: what happens if projectile/enemy is popped from the middle?
+    // forloop might be dangerous
 
     // clear offbounds projectiles
     for (int i = 0; i < gProjectiles.size(); ++i) {
-      if (gProjectiles[i]->GetPosX() < 0 ||
-          gProjectiles[i]->GetPosX() > LEVEL_WIDTH ||
-          gProjectiles[i]->GetPosY() < 0 ||
-          gProjectiles[i]->GetPosY() > LEVEL_HEIGHT) {
-        RProjectile *delProjectile = gProjectiles[i];
+      RProjectile *projectile = gProjectiles[i];
+      if (projectile->GetPosX() < 0 || projectile->GetPosX() > LEVEL_WIDTH ||
+          projectile->GetPosY() < 0 || projectile->GetPosY() > LEVEL_HEIGHT) {
 
         // remove ith element
         gProjectiles.erase(gProjectiles.begin() + i);
 
         // free memory (does vector erase do this for us?)
-        delete delProjectile;
+        delete projectile;
       }
     }
 
+    // clear offbounds enemies
+    for (int i = 0; i < gEnemies.size(); ++i) {
+      REnemy *enemy = gEnemies[i];
+
+      if (enemy->IsAtEndOfPath()) {
+        gEnemies.erase(gEnemies.begin() + i);
+
+        delete enemy;
+      }
+    }
+
+    // drawing begins here
     SDL_RenderClear(gRenderer);
 
-    // draw code
+    // render map
     tMap0.Render(gRenderer, 0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
-    enemy0.Render(gRenderer, dt);
-    vlGroup.Render(gRenderer);
 
-    // render all projectiles
+    // upd enemies
+    for (int i = 0; i < gEnemies.size(); ++i) {
+      gEnemies[i]->MoveAlongPath();
+      gEnemies[i]->SetTarget(mouseX, mouseY);
+
+      // this is kinda misleading; it seems like a call-once but it needs to run
+      // on update
+      gEnemies[i]->Shoot(&tBall, gProjectiles, dt);
+
+      gEnemies[i]->Render(gRenderer, dt);
+    }
+
+    // upd projectiles
     for (int i = 0; i < gProjectiles.size(); ++i) {
       gProjectiles[i]->Move();
       gProjectiles[i]->Render(gRenderer);
     }
+
+    // render ui
+    vlGroup.Render(gRenderer);
 
     SDL_RenderPresent(gRenderer);
 
