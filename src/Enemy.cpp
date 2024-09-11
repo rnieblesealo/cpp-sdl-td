@@ -5,6 +5,42 @@
 
 const double PI = 3.14159265358979323846;
 
+Projectile::Projectile(RTexture *projectileTexture) {
+  posX = 0;
+  posY = 0;
+  velX = 0;
+  velY = 0;
+
+  texture = projectileTexture;
+}
+
+int Projectile::GetPosX(){
+  return posX;
+}
+
+int Projectile::GetPosY(){
+  return posY;
+}
+
+void Projectile::SetPos(int x, int y) {
+  posX = x;
+  posY = y;
+}
+
+void Projectile::SetVel(int vx, int vy) {
+  velX = vx;
+  velY = vy;
+}
+
+void Projectile::Move() {
+  posX += velX;
+  posY += velY;
+}
+
+void Projectile::Render(SDL_Renderer *renderer) {
+  texture->Render(renderer, posX, posY, NULL, true);
+}
+
 Enemy::Enemy(RSprite *bodySprite, RSprite *weaponSprite) {
   this->bodySprite = bodySprite;
   this->weaponSprite = weaponSprite;
@@ -13,15 +49,21 @@ Enemy::Enemy(RSprite *bodySprite, RSprite *weaponSprite) {
 
   posX = 0;
   posY = 0;
+
   velX = 0;
   velY = 0;
+
   targetX = -1;
   targetY = -1;
+
   speed = 2;
+  projectileSpeed = 20;
 
   path = NULL;
   pathLength = -1;
   nextPathPoint = -1;
+
+  weaponAngle = 0;
 }
 
 SDL_Rect *Enemy::GetCollider() {
@@ -95,22 +137,38 @@ void Enemy::Move() {
   posY += (velY * speed);
 }
 
+void Enemy::Shoot(RTexture *projectileTexture,
+                  std::vector<Projectile *> &gProjectiles) {
+  // don't forget to handle this dynamic mem!
+  Projectile *n = new Projectile(projectileTexture);
+
+  // calculate target using weapon angle
+  n->SetVel((int)(SDL_cosf(weaponAngle) * projectileSpeed),
+            (int)(SDL_sinf(weaponAngle) * projectileSpeed));
+
+  n->SetPos(this->posX, this->posY);
+
+  // add this projectile to registry
+  gProjectiles.push_back(n);
+}
+
 void Enemy::Render(SDL_Renderer *renderer, float dt) {
   // round float pos to integer coords before rendering
   int rPosX = (int)SDL_roundf(posX);
   int rPosY = (int)SDL_roundf(posY);
 
   // point weapon to target if latter is ok (coords must be positive)
-  double angle = 0;
   if (targetX >= 0 && targetY >= 0) {
     double dx = targetX - posX;
     double dy = targetY - posY;
 
-    angle = SDL_atan2(dy, dx) * (180 / PI);
+    // keep in radians, convert to deg when needed
+    weaponAngle = SDL_atan2(dy, dx);
   }
 
   bodySprite->Render(renderer, dt, rPosX, rPosY, 0);
 
   // 90 accounts for initial rotation
-  weaponSprite->Render(renderer, dt, rPosX, rPosY, angle + 90);
+  weaponSprite->Render(renderer, dt, rPosX, rPosY,
+                       weaponAngle * (180 / PI) + 90);
 }

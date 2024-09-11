@@ -20,3 +20,5 @@ Tower defense game, but you control the invaders instead!
 2. Hard-code paths by hand
 
 This is the least confusing + most painless way to do things!
+
+### Projectiles

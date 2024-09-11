@@ -42,7 +42,8 @@ bool RTexture::LoadFromRenderedText(SDL_Renderer *renderer, TTF_Font *font,
 
 #endif
 
-bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path, SDL_Color key) {
+bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path,
+                            SDL_Color key) {
 
   Free();
 
@@ -53,7 +54,8 @@ bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path, SDL_Color 
     return false;
   }
 
-  SDL_SetColorKey(lSurf, SDL_TRUE, SDL_MapRGB(lSurf->format, key.r, key.g, key.b));
+  SDL_SetColorKey(lSurf, SDL_TRUE,
+                  SDL_MapRGB(lSurf->format, key.r, key.g, key.b));
 
   SDL_Texture *nTexture = SDL_CreateTextureFromSurface(renderer, lSurf);
 
@@ -92,7 +94,8 @@ void RTexture::ModColor(Uint8 r, Uint8 g, Uint8 b) {
 
 void RTexture::ModAlpha(Uint8 a) { SDL_SetTextureAlphaMod(texture, a); }
 
-void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip, bool center) {
+void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
+                      bool center) {
 
   renderDest = {x, y, width, height};
 
@@ -104,7 +107,7 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip, bool
   renderDest.w *= scale;
   renderDest.h *= scale;
 
-  if (center){
+  if (center) {
     renderDest.x -= renderDest.w / 2;
     renderDest.y -= renderDest.h / 2;
   }
@@ -151,12 +154,8 @@ int RTexture::GetHeight() {
   return renderDest.h;
 }
 
-int RTexture::GetWidthUnscaled(){
-  return width;
-}
+int RTexture::GetWidthUnscaled() { return width; }
 
-int RTexture::GetHeightUnscaled(){
-  return height;
-}
+int RTexture::GetHeightUnscaled() { return height; }
 
 void RTexture::SetScale(int nScale) { scale = nScale; }

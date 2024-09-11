@@ -1,7 +1,7 @@
 #include "Enemy.hpp"
+#include "RGUI.hpp"
 #include "RSprite.hpp"
 #include "RTexture.hpp"
-#include "RGUI.hpp"
 #include <SDL.h>
 #include <SDL_error.h>
 #include <SDL_events.h>
@@ -69,6 +69,10 @@ RGraphic graphicB;
 RGraphic graphicC;
 
 RVerticalLayoutGroup vlGroup;
+
+// projectiles test
+RTexture tBall;
+std::vector<Projectile *> gProjectiles;
 
 void PrintError() { printf("%s\n", SDL_GetError()); }
 
@@ -176,6 +180,14 @@ bool LoadMedia() {
     map0Path[i].y -= (int)SDL_roundf((float)TILE_H / 2);
   }
 
+  if (!tBall.LoadFromFile(gRenderer, "../assets/ball.png")) {
+    PrintError();
+    success = false;
+  }
+
+  tBall.ModColor(255, 0, 0);
+  tBall.SetScale(4);
+
   if (!tEnemy0.LoadFromFile(gRenderer, "../assets/r-tank-body.png",
                             {255, 255, 255})) {
     PrintError();
@@ -239,8 +251,6 @@ int main() {
 
   SDL_Rect *x = graphicA.GetArea();
 
-  printf("%d %d %d %d\n", x->x, x->y, x->w, x->h);
-
   SDL_Event e;
 
   bool quit = false;
@@ -269,6 +279,13 @@ int main() {
         }
       }
 
+      // fire projectile when click
+      else if (e.type == SDL_MOUSEBUTTONDOWN) {
+        if (e.button.button == SDL_BUTTON_LEFT) {
+          enemy0.Shoot(&tBall, gProjectiles);
+        }
+      }
+
       // set mouse coords
       else if (e.type == SDL_MOUSEMOTION) {
         SDL_GetMouseState(&mouseX, &mouseY);
@@ -279,12 +296,34 @@ int main() {
     enemy0.MoveAlongPath();
     enemy0.SetTarget(mouseX, mouseY);
 
+    // clear offbounds projectiles
+    for (int i = 0; i < gProjectiles.size(); ++i) {
+      if (gProjectiles[i]->GetPosX() < 0 ||
+          gProjectiles[i]->GetPosX() > LEVEL_WIDTH ||
+          gProjectiles[i]->GetPosY() < 0 ||
+          gProjectiles[i]->GetPosY() > LEVEL_HEIGHT) {
+        Projectile *delProjectile = gProjectiles[i];
+
+        // remove ith element
+        gProjectiles.erase(gProjectiles.begin() + i);
+
+        // free memory (does vector erase do this for us?)
+        delete delProjectile;
+      }
+    }
+
     SDL_RenderClear(gRenderer);
 
     // draw code
     tMap0.Render(gRenderer, 0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
     enemy0.Render(gRenderer, dt);
     vlGroup.Render(gRenderer);
+
+    // render all projectiles
+    for (int i = 0; i < gProjectiles.size(); ++i) {
+      gProjectiles[i]->Move();
+      gProjectiles[i]->Render(gRenderer);
+    }
 
     SDL_RenderPresent(gRenderer);
 
