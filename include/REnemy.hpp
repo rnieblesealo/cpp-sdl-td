@@ -4,6 +4,7 @@
 #include "RSprite.hpp"
 #include "RTexture.hpp"
 #include "RTimer.hpp"
+#include <SDL_mixer.h>
 #include <SDL_render.h>
 #include <vector>
 
@@ -30,7 +31,7 @@ private:
 
 class REnemy {
 public:
-  REnemy(RSprite *bodySprite, RSprite *weaponSprite);
+  REnemy(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound);
 
   SDL_Rect *GetCollider();
 
@@ -52,7 +53,7 @@ public:
 private:
   RSprite *bodySprite;
   RSprite *weaponSprite;
-  SDL_Rect collider;
+  Mix_Chunk *shootSound;
 
   // these are stored as floats for calculation purposes
   // but should be rounded to ints for rendering

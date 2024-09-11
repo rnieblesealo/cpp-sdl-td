@@ -1,5 +1,6 @@
 ### Notes
-Sprite postiions are relative to their center; everything else's position isn't
+- Sprite postiions are relative to their center; everything else's position isn't
+- If we get random segfault, check NULL assignments for R classes
 
 ### Idea 
 Tower defense game, but you control the invaders instead!
@@ -20,6 +21,3 @@ Tower defense game, but you control the invaders instead!
 2. Hard-code paths by hand
 
 This is the least confusing + most painless way to do things!
-
-### Projectiles
-

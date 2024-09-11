@@ -41,6 +41,9 @@ std::chrono::time_point lastUpdateTime =
 float targetFps = 120;
 float dt = 0;
 
+// sound
+Mix_Chunk *sfxShoot;
+
 // maps
 RTexture tMap0;
 const int MAP_0_PATH_LENGTH = 13;
@@ -62,7 +65,7 @@ RSprite sEnemy0Weapon(&tEnemy0Weapon, tEnemy0WeaponClips, 8);
 std::vector<REnemy *> gEnemies;
 
 void SpawnEnemy() {
-  REnemy *newEnemy = new REnemy(&sEnemy0, &sEnemy0Weapon);
+  REnemy *newEnemy = new REnemy(&sEnemy0, &sEnemy0Weapon, sfxShoot);
 
   // make enemy follow path
   newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
@@ -212,11 +215,22 @@ bool LoadMedia() {
     success = false;
   }
 
+  sfxShoot = Mix_LoadWAV("../assets/shoot.wav");
+  if (!sfxShoot){
+    PrintError();
+    success = false;
+  }
+
   return success;
 }
 
 void Close() {
   tMap0.Free();
+  tEnemy0.Free();
+  tEnemy0Weapon.Free();
+  tBall.Free();
+
+  Mix_FreeChunk(sfxShoot);
 
   SDL_DestroyRenderer(gRenderer);
   gRenderer = NULL;

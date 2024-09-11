@@ -1,5 +1,6 @@
 #include "REnemy.hpp"
 
+#include <SDL_mixer.h>
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
 
@@ -37,11 +38,10 @@ void RProjectile::Render(SDL_Renderer *renderer) {
   texture->Render(renderer, posX, posY, NULL, true);
 }
 
-REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite) {
+REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound) {
   this->bodySprite = bodySprite;
   this->weaponSprite = weaponSprite;
-
-  collider = {0, 0, 0, 0};
+  this->shootSound = shootSound;
 
   posX = 0;
   posY = 0;
@@ -60,18 +60,10 @@ REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite) {
   nextPathPoint = -1;
 
   weaponAngle = 0;
-  fireRate = 10; 
+  fireRate = 2;
 
   // start shoot timer right away
   shootTimer.Start();
-}
-
-SDL_Rect *REnemy::GetCollider() {
-  if (collider.x + collider.y + collider.w + collider.h == 0) {
-    printf("Warning: Getting zero-size collider!\n");
-  }
-
-  return &collider;
 }
 
 bool REnemy::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
@@ -146,6 +138,9 @@ void REnemy::Shoot(RTexture *projectileTexture,
 
     // add this projectile to registry
     gRProjectiles.push_back(n);
+
+    // play shoot sound
+    Mix_PlayChannel(-1, shootSound, 0);
 
     shootTimer.Reset();
   }
