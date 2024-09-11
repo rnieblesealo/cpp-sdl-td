@@ -1,11 +1,11 @@
-#include "Enemy.hpp"
+#include "REnemy.hpp"
 
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
 
 const double PI = 3.14159265358979323846;
 
-Projectile::Projectile(RTexture *projectileTexture) {
+RProjectile::RProjectile(RTexture *projectileTexture) {
   posX = 0;
   posY = 0;
   velX = 0;
@@ -14,34 +14,34 @@ Projectile::Projectile(RTexture *projectileTexture) {
   texture = projectileTexture;
 }
 
-int Projectile::GetPosX(){
+int RProjectile::GetPosX(){
   return posX;
 }
 
-int Projectile::GetPosY(){
+int RProjectile::GetPosY(){
   return posY;
 }
 
-void Projectile::SetPos(int x, int y) {
+void RProjectile::SetPos(int x, int y) {
   posX = x;
   posY = y;
 }
 
-void Projectile::SetVel(int vx, int vy) {
+void RProjectile::SetVel(int vx, int vy) {
   velX = vx;
   velY = vy;
 }
 
-void Projectile::Move() {
+void RProjectile::Move() {
   posX += velX;
   posY += velY;
 }
 
-void Projectile::Render(SDL_Renderer *renderer) {
+void RProjectile::Render(SDL_Renderer *renderer) {
   texture->Render(renderer, posX, posY, NULL, true);
 }
 
-Enemy::Enemy(RSprite *bodySprite, RSprite *weaponSprite) {
+REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite) {
   this->bodySprite = bodySprite;
   this->weaponSprite = weaponSprite;
 
@@ -66,7 +66,7 @@ Enemy::Enemy(RSprite *bodySprite, RSprite *weaponSprite) {
   weaponAngle = 0;
 }
 
-SDL_Rect *Enemy::GetCollider() {
+SDL_Rect *REnemy::GetCollider() {
   if (collider.x + collider.y + collider.w + collider.h == 0) {
     printf("Warning: Getting zero-size collider!\n");
   }
@@ -74,22 +74,22 @@ SDL_Rect *Enemy::GetCollider() {
   return &collider;
 }
 
-void Enemy::SetPos(float x, float y) {
+void REnemy::SetPos(float x, float y) {
   posX = x;
   posY = y;
 }
 
-void Enemy::SetVel(float vx, float vy) {
+void REnemy::SetVel(float vx, float vy) {
   velX = vx;
   velY = vy;
 }
 
-void Enemy::SetTarget(float x, float y) {
+void REnemy::SetTarget(float x, float y) {
   targetX = x;
   targetY = y;
 }
 
-void Enemy::SetPath(SDL_Point *path, int pathLength) {
+void REnemy::SetPath(SDL_Point *path, int pathLength) {
   this->path = path;
   this->pathLength = pathLength;
 
@@ -97,9 +97,9 @@ void Enemy::SetPath(SDL_Point *path, int pathLength) {
   nextPathPoint = 0;
 }
 
-void Enemy::SetSpeed(int speed) { this->speed = speed; }
+void REnemy::SetSpeed(int speed) { this->speed = speed; }
 
-void Enemy::MoveAlongPath() {
+void REnemy::MoveAlongPath() {
   if (path == NULL) {
     printf("No path defined!\n");
     return;
@@ -132,15 +132,15 @@ void Enemy::MoveAlongPath() {
   Move();
 }
 
-void Enemy::Move() {
+void REnemy::Move() {
   posX += (velX * speed);
   posY += (velY * speed);
 }
 
-void Enemy::Shoot(RTexture *projectileTexture,
-                  std::vector<Projectile *> &gProjectiles) {
+void REnemy::Shoot(RTexture *projectileTexture,
+                  std::vector<RProjectile *> &gRProjectiles) {
   // don't forget to handle this dynamic mem!
-  Projectile *n = new Projectile(projectileTexture);
+  RProjectile *n = new RProjectile(projectileTexture);
 
   // calculate target using weapon angle
   n->SetVel((int)(SDL_cosf(weaponAngle) * projectileSpeed),
@@ -149,10 +149,10 @@ void Enemy::Shoot(RTexture *projectileTexture,
   n->SetPos(this->posX, this->posY);
 
   // add this projectile to registry
-  gProjectiles.push_back(n);
+  gRProjectiles.push_back(n);
 }
 
-void Enemy::Render(SDL_Renderer *renderer, float dt) {
+void REnemy::Render(SDL_Renderer *renderer, float dt) {
   // round float pos to integer coords before rendering
   int rPosX = (int)SDL_roundf(posX);
   int rPosY = (int)SDL_roundf(posY);

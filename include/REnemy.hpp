@@ -6,9 +6,9 @@
 #include <SDL_render.h>
 #include <vector>
 
-class Projectile {
+class RProjectile {
 public:
-  Projectile(RTexture *projectileTexture);
+  RProjectile(RTexture *projectileTexture);
 
   int GetPosX();
   int GetPosY();
@@ -27,9 +27,9 @@ private:
   RTexture *texture;
 };
 
-class Enemy {
+class REnemy {
 public:
-  Enemy(RSprite *bodySprite, RSprite *weaponSprite);
+  REnemy(RSprite *bodySprite, RSprite *weaponSprite);
 
   SDL_Rect *GetCollider();
 
@@ -42,7 +42,7 @@ public:
   void Move();
   void MoveAlongPath();
 
-  void Shoot(RTexture *projectileTexture, std::vector<Projectile *>& gProjectiles);
+  void Shoot(RTexture *projectileTexture, std::vector<RProjectile *>& gRProjectiles);
 
   void Render(SDL_Renderer *renderer, float dt);
 

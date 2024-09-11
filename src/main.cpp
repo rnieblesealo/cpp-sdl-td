@@ -1,4 +1,4 @@
-#include "Enemy.hpp"
+#include "REnemy.hpp"
 #include "RGUI.hpp"
 #include "RSprite.hpp"
 #include "RTexture.hpp"
@@ -52,7 +52,7 @@ SDL_Rect tEnemy0WeaponClips[] = {
 RSprite sEnemy0(&tEnemy0, tEnemy0Clips, 1);
 RSprite sEnemy0Weapon(&tEnemy0Weapon, tEnemy0WeaponClips, 8);
 
-Enemy enemy0(&sEnemy0, &sEnemy0Weapon);
+REnemy enemy0(&sEnemy0, &sEnemy0Weapon);
 
 // maps
 RTexture tMap0;
@@ -72,7 +72,7 @@ RVerticalLayoutGroup vlGroup;
 
 // projectiles test
 RTexture tBall;
-std::vector<Projectile *> gProjectiles;
+std::vector<RProjectile *> gProjectiles;
 
 void PrintError() { printf("%s\n", SDL_GetError()); }
 
@@ -302,7 +302,7 @@ int main() {
           gProjectiles[i]->GetPosX() > LEVEL_WIDTH ||
           gProjectiles[i]->GetPosY() < 0 ||
           gProjectiles[i]->GetPosY() > LEVEL_HEIGHT) {
-        Projectile *delProjectile = gProjectiles[i];
+        RProjectile *delProjectile = gProjectiles[i];
 
         // remove ith element
         gProjectiles.erase(gProjectiles.begin() + i);
