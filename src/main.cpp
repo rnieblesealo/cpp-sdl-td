@@ -1,4 +1,4 @@
-#include "REnemy.hpp"
+#include "REntity.hpp"
 #include "RGUI.hpp"
 #include "RSprite.hpp"
 #include "RTexture.hpp"
@@ -15,22 +15,23 @@
 #include <SDL_video.h>
 #include <chrono>
 
-// these are set from a 12*12 tile level, with tile size being 128*128px
-const int LEVEL_WIDTH = 1536;
-const int LEVEL_HEIGHT = 1536;
+const int TILE_WIDTH = 128;
+const int TILE_HEIGHT = 128;
+
+const int LEVEL_GRID_WIDTH = 12;
+const int LEVEL_GRID_HEIGHT = 12;
+
+const int LEVEL_WIDTH = TILE_WIDTH * LEVEL_GRID_WIDTH;
+const int LEVEL_HEIGHT = TILE_HEIGHT * LEVEL_GRID_HEIGHT;
 
 const int GUI_WIDTH = 128 * 3;
 
 const int SCREEN_WIDTH = LEVEL_WIDTH + GUI_WIDTH;
 const int SCREEN_HEIGHT = LEVEL_HEIGHT;
 
-const int TILE_W = 128;
-const int TILE_H = 128;
-
-// this isnt dependent on spritesheet
 const int FONT_SIZE = 24;
 
-// general stuff
+// sdl/general
 SDL_Window *gWindow = NULL;
 SDL_Surface *gWindowSurface = NULL;
 SDL_Renderer *gRenderer = NULL;
@@ -38,82 +39,103 @@ TTF_Font *gFont = NULL;
 
 std::chrono::time_point lastUpdateTime =
     std::chrono::high_resolution_clock::now();
+
 float targetFps = 120;
 float dt = 0;
 
-// sound
+// sfx/sound
 Mix_Chunk *sfxShoot;
 
-// maps
+// map
 RTexture tMap0;
 const int MAP_0_PATH_LENGTH = 13;
 SDL_Point map0Path[MAP_0_PATH_LENGTH];
 
 // enemies
-RTexture tCrosshair;
+RTexture tEnemy;
+RTexture tEnemyWeapon;
 
-RTexture tEnemy0;
-RTexture tEnemy0Weapon;
+SDL_Rect cEnemy[] = {{0, 0, 128, 128}};
+SDL_Rect cEnemyWeapon[] = {{0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128},
+                           {2 * 128, 0, 128, 128}, {3 * 128, 0, 128, 128},
+                           {4 * 128, 0, 128, 128}, {5 * 128, 0, 128, 128},
+                           {6 * 128, 0, 128, 128}, {7 * 128, 0, 128, 128}};
 
-SDL_Rect tEnemy0Clips[] = {{0, 0, 128, 128}};
-SDL_Rect tEnemy0WeaponClips[] = {
-    {0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128}, {2 * 128, 0, 128, 128},
-    {3 * 128, 0, 128, 128}, {4 * 128, 0, 128, 128}, {5 * 128, 0, 128, 128},
-    {6 * 128, 0, 128, 128}, {7 * 128, 0, 128, 128}};
+RSprite sEnemy(&tEnemy, cEnemy, 1);
+RSprite sEnemyWeapon(&tEnemyWeapon, cEnemyWeapon, 8);
 
-RSprite sEnemy0(&tEnemy0, tEnemy0Clips, 1);
-RSprite sEnemy0Weapon(&tEnemy0Weapon, tEnemy0WeaponClips, 8);
-
-std::vector<REnemy *> gEnemies;
+std::vector<REntity *> gEnemies;
 
 int enemyTargetX = 0;
 int enemyTargetY = 0;
 
 void SpawnEnemy() {
-  REnemy *newEnemy = new REnemy(&sEnemy0, &sEnemy0Weapon, sfxShoot);
+  REntity *newEnemy = new REntity(&sEnemy, &sEnemyWeapon, sfxShoot);
 
   // make enemy follow path
   newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
   newEnemy->SetPos(map0Path[0].x, map0Path[0].y);
-
-  // TESTING
-  // for fun!
-  newEnemy->SetProjectileSpeed(5);
-  newEnemy->SetFireRate(999);
 
   // add enemy to reg
   gEnemies.push_back(newEnemy);
 }
 
 // towers
-// i think we can just use enemy class for this
-// yea
+RTexture tTowerBase;
+RTexture tTowerWeapon;
+
+SDL_Rect cTowerBase[] = {{0, 0, 128, 128}};
+SDL_Rect cTowerWeapon[] = {
+    {0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128}, {2 * 128, 0, 128, 128},
+    {3 * 128, 0, 128, 128}, {4 * 128, 0, 128, 128}, {5 * 128, 0, 128, 128},
+    {6 * 128, 0, 128, 128}, {7 * 128, 0, 128, 128}, {8 * 128, 0, 128, 128},
+    {9 * 128, 0, 128, 128}, {10 * 128, 0, 128, 128}};
+
+RSprite sTowerBase(&tTowerBase, cTowerBase, 1);
+RSprite sTowerWeapon(&tTowerWeapon, cTowerWeapon, 11);
+
+std::vector<REntity *> gTowers;
 
 int towerTargetX = 0;
 int towerTargetY = 0;
 
-RTexture tTowerBase;
+void SpawnTower(int gridX, int gridY) {
+  if (gridX > LEVEL_GRID_WIDTH || gridX < 0 || gridY > LEVEL_GRID_HEIGHT ||
+      gridY < 0) {
+    printf("Invalid tower spawnpos\n");
+    return;
+  }
 
-SDL_Rect cTowerBase[] = {{0, 0, 128, 128}};
+  // amplify pos to px scale
+  // center pos over tile too; sprites render centered
+  gridX = gridX * TILE_WIDTH + TILE_WIDTH / 2;
+  gridY = gridY * TILE_HEIGHT + TILE_HEIGHT / 2;
 
-RSprite sTowerBase(&tTowerBase, cTowerBase, 1);
+  REntity *newTower = new REntity(&sTowerBase, &sTowerWeapon, NULL);
 
-// test tower
-REnemy testTower(&sTowerBase, &sEnemy0Weapon, sfxShoot);
+  // spawn tower in coords relative to grid
+  newTower->SetPos(gridX, gridY);
+
+  gTowers.push_back(newTower);
+}
+
+// projectiles
+// TODO: we are modcoloring the same texture, implement correctly
+RTexture tBallRed;
+RTexture tBallBlue;
+std::vector<RProjectile *> gProjectiles;
 
 // event handling
 int mouseX = 0;
 int mouseY = 0;
 
 // gui
+RTexture tCrosshair;
+
 RGraphic graphicA;
 RButton buttonA(&graphicA, &SpawnEnemy);
 
 RVerticalLayoutGroup vlGroup;
-
-// projectiles
-RTexture tBall;
-std::vector<RProjectile *> gProjectiles;
 
 void PrintError() { printf("%s\n", SDL_GetError()); }
 
@@ -213,35 +235,49 @@ bool LoadMedia() {
 
   for (int i = 0; i < MAP_0_PATH_LENGTH; ++i) {
     // scale up point coords to match screen coords
-    map0Path[i].x *= TILE_W;
-    map0Path[i].y *= TILE_H;
+    map0Path[i].x *= TILE_WIDTH;
+    map0Path[i].y *= TILE_HEIGHT;
 
     // center over tile size
-    map0Path[i].x -= (int)SDL_roundf((float)TILE_W / 2);
-    map0Path[i].y -= (int)SDL_roundf((float)TILE_H / 2);
+    map0Path[i].x -= (int)SDL_roundf((float)TILE_WIDTH / 2);
+    map0Path[i].y -= (int)SDL_roundf((float)TILE_HEIGHT / 2);
   }
 
-  if (!tBall.LoadFromFile(gRenderer, "../assets/ball.png")) {
+  if (!tBallRed.LoadFromFile(gRenderer, "../assets/ball.png")) {
     PrintError();
     success = false;
   }
 
-  tBall.ModColor(255, 0, 0);
-  tBall.SetScale(4);
+  tBallRed.ModColor(255, 0, 0);
+  tBallRed.SetScale(4);
 
-  if (!tTowerBase.LoadFromFile(gRenderer, "../assets/r-tower-base.png", {255, 255, 255, 255})) {
+  if (!tBallBlue.LoadFromFile(gRenderer, "../assets/ball.png")) {
+    PrintError();
+    success = false;
+  }
+  
+  tBallBlue.ModColor(0, 0, 255);
+  tBallBlue.SetScale(4);
+
+  if (!tTowerBase.LoadFromFile(gRenderer, "../assets/b-tower-base.png",
+                               {255, 255, 255})) {
     PrintError();
     success = false;
   }
 
-  if (!tEnemy0.LoadFromFile(gRenderer, "../assets/r-tank-body.png",
-                            {255, 255, 255})) {
+  if (!tTowerWeapon.LoadFromFile(gRenderer, "../assets/b-tower-weapon.png")) {
     PrintError();
     success = false;
   }
 
-  if (!tEnemy0Weapon.LoadFromFile(gRenderer, "../assets/r-tank-turret1.png",
-                                  {255, 255, 255})) {
+  if (!tEnemy.LoadFromFile(gRenderer, "../assets/r-tank-body.png",
+                           {255, 255, 255})) {
+    PrintError();
+    success = false;
+  }
+
+  if (!tEnemyWeapon.LoadFromFile(gRenderer, "../assets/r-tank-turret1.png",
+                                 {255, 255, 255})) {
     PrintError();
     success = false;
   }
@@ -264,9 +300,9 @@ bool LoadMedia() {
 
 void Close() {
   tMap0.Free();
-  tEnemy0.Free();
-  tEnemy0Weapon.Free();
-  tBall.Free();
+  tEnemy.Free();
+  tEnemyWeapon.Free();
+  tBallRed.Free();
 
   Mix_FreeChunk(sfxShoot);
 
@@ -303,10 +339,14 @@ int main() {
   vlGroup.Apply();
 
   // TESTING
-  // setup test tower
-  testTower.SetPos((float)LEVEL_WIDTH / 2, (float)LEVEL_HEIGHT / 2);
-  testTower.SetProjectileSpeed(15);
-  testTower.SetFireRate(100);
+  // spawn towers
+  srand(time(NULL));
+
+  int nTowers = 12;
+
+  for (int i = 0; i < nTowers; ++i) {
+    SpawnTower(rand() % LEVEL_GRID_WIDTH, rand() % LEVEL_GRID_HEIGHT);
+  }
 
   SDL_Event e;
 
@@ -364,7 +404,7 @@ int main() {
 
     // clear offbounds enemies
     for (int i = 0; i < gEnemies.size(); ++i) {
-      REnemy *enemy = gEnemies[i];
+      REntity *enemy = gEnemies[i];
 
       if (enemy->IsAtEndOfPath()) {
         gEnemies.erase(gEnemies.begin() + i);
@@ -386,24 +426,24 @@ int main() {
 
       // this is kinda misleading; it seems like a call-once but it needs to run
       // on update
-      gEnemies[i]->Shoot(&tBall, gProjectiles, dt);
+      gEnemies[i]->Shoot(&tBallRed, gProjectiles, dt);
 
       gEnemies[i]->Render(gRenderer, dt);
     }
 
     // TESTING
-    // upd tower
-    
-    // make it point at the first enemy
-    if (gEnemies.size() > 0){
-      towerTargetX = gEnemies[0]->GetPosX();  
-      towerTargetY = gEnemies[0]->GetPosY();  
-      
-      testTower.SetTarget(towerTargetX, towerTargetY);
+    // make towers shoot at first enemy
+    if (gEnemies.size() > 0) {
+      towerTargetX = gEnemies[0]->GetPosX();
+      towerTargetY = gEnemies[0]->GetPosY();
     }
 
-    testTower.Shoot(&tBall, gProjectiles, dt);
-    testTower.Render(gRenderer, dt);
+    // upd tower
+    for (int i = 0; i < gTowers.size(); ++i) {
+      gTowers[i]->SetTarget(towerTargetX, towerTargetY);
+      gTowers[i]->Shoot(&tBallBlue, gProjectiles, dt);
+      gTowers[i]->Render(gRenderer, dt);
+    }
 
     // upd projectiles
     for (int i = 0; i < gProjectiles.size(); ++i) {

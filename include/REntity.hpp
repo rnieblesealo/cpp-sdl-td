@@ -29,9 +29,9 @@ private:
   RTexture *texture;
 };
 
-class REnemy {
+class REntity {
 public:
-  REnemy(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound);
+  REntity(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound);
 
   bool IsAtEndOfPath();
 

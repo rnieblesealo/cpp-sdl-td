@@ -1,4 +1,4 @@
-#include "REnemy.hpp"
+#include "REntity.hpp"
 
 #include <SDL_mixer.h>
 #include <SDL_render.h>
@@ -38,7 +38,7 @@ void RProjectile::Render(SDL_Renderer *renderer) {
   texture->Render(renderer, posX, posY, NULL, true);
 }
 
-REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound) {
+REntity::REntity(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound) {
   this->bodySprite = bodySprite;
   this->weaponSprite = weaponSprite;
   this->shootSound = shootSound;
@@ -66,40 +66,40 @@ REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound
   shootTimer.Start();
 }
 
-bool REnemy::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
+bool REntity::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
 
-int REnemy::GetPosX(){
+int REntity::GetPosX(){
   return posX;
 }
 
-int REnemy::GetPosY(){
+int REntity::GetPosY(){
   return posY;
 }
 
-void REnemy::SetPos(float x, float y) {
+void REntity::SetPos(float x, float y) {
   posX = x;
   posY = y;
 }
 
-void REnemy::SetVel(float vx, float vy) {
+void REntity::SetVel(float vx, float vy) {
   velX = vx;
   velY = vy;
 }
 
-void REnemy::SetTarget(float x, float y) {
+void REntity::SetTarget(float x, float y) {
   targetX = x;
   targetY = y;
 }
 
-void REnemy::SetProjectileSpeed(int speed){
+void REntity::SetProjectileSpeed(int speed){
   projectileSpeed = speed;
 }
 
-void REnemy::SetFireRate(int rate){
+void REntity::SetFireRate(int rate){
   fireRate = rate;
 }
 
-void REnemy::SetPath(SDL_Point *path, int pathLength) {
+void REntity::SetPath(SDL_Point *path, int pathLength) {
   this->path = path;
   this->pathLength = pathLength;
 
@@ -107,9 +107,9 @@ void REnemy::SetPath(SDL_Point *path, int pathLength) {
   nextPathPoint = 0;
 }
 
-void REnemy::SetSpeed(int speed) { this->speed = speed; }
+void REntity::SetSpeed(int speed) { this->speed = speed; }
 
-void REnemy::MoveAlongPath() {
+void REntity::MoveAlongPath() {
   if (path == NULL || IsAtEndOfPath()) {
     printf("No path defined!\n");
     return;
@@ -135,7 +135,7 @@ void REnemy::MoveAlongPath() {
   posY += (velY * speed);
 }
 
-void REnemy::Shoot(RTexture *projectileTexture,
+void REntity::Shoot(RTexture *projectileTexture,
                    std::vector<RProjectile *> &gRProjectiles, float dt) {
 
   // this is the shoot timer
@@ -162,7 +162,7 @@ void REnemy::Shoot(RTexture *projectileTexture,
   }
 }
 
-void REnemy::Render(SDL_Renderer *renderer, float dt) {
+void REntity::Render(SDL_Renderer *renderer, float dt) {
   // round float pos to integer coords before rendering
   int rPosX = (int)SDL_roundf(posX);
   int rPosY = (int)SDL_roundf(posY);
