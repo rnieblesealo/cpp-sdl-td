@@ -1,9 +1,9 @@
 ## Todo
 
-- [x] Click to set target
 - [ ] Enemy colors
 - [ ] Music
-- [ ] Towers!
+- [x] Click to set target
+- [x] Towers!
 
 ## Notes
 
