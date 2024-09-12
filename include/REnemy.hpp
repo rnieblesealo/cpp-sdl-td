@@ -33,13 +33,16 @@ class REnemy {
 public:
   REnemy(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound);
 
-  SDL_Rect *GetCollider();
-
   bool IsAtEndOfPath();
+
+  int GetPosX();
+  int GetPosY();
 
   void SetPos(float x, float y);
   void SetVel(float vx, float vy);
   void SetTarget(float x, float y);
+  void SetProjectileSpeed(int speed);
+  void SetFireRate(int rate);
   void SetPath(SDL_Point *path, int pathLength);
   void SetSpeed(int speed);
 

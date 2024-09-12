@@ -68,6 +68,14 @@ REnemy::REnemy(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound
 
 bool REnemy::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
 
+int REnemy::GetPosX(){
+  return posX;
+}
+
+int REnemy::GetPosY(){
+  return posY;
+}
+
 void REnemy::SetPos(float x, float y) {
   posX = x;
   posY = y;
@@ -81,6 +89,14 @@ void REnemy::SetVel(float vx, float vy) {
 void REnemy::SetTarget(float x, float y) {
   targetX = x;
   targetY = y;
+}
+
+void REnemy::SetProjectileSpeed(int speed){
+  projectileSpeed = speed;
+}
+
+void REnemy::SetFireRate(int rate){
+  fireRate = rate;
 }
 
 void REnemy::SetPath(SDL_Point *path, int pathLength) {

@@ -1,4 +1,13 @@
-### Notes
+## Todo
+
+- [x] Click to set target
+- [ ] Enemy colors
+- [ ] Music
+- [ ] Towers!
+
+## Notes
+
+### General/Uncategorized
 - Sprite postiions are relative to their center; everything else's position isn't
 - If we get random segfault, check NULL assignments for R classes
 

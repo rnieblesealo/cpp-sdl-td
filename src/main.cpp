@@ -50,6 +50,8 @@ const int MAP_0_PATH_LENGTH = 13;
 SDL_Point map0Path[MAP_0_PATH_LENGTH];
 
 // enemies
+RTexture tCrosshair;
+
 RTexture tEnemy0;
 RTexture tEnemy0Weapon;
 
@@ -64,6 +66,9 @@ RSprite sEnemy0Weapon(&tEnemy0Weapon, tEnemy0WeaponClips, 8);
 
 std::vector<REnemy *> gEnemies;
 
+int enemyTargetX = 0;
+int enemyTargetY = 0;
+
 void SpawnEnemy() {
   REnemy *newEnemy = new REnemy(&sEnemy0, &sEnemy0Weapon, sfxShoot);
 
@@ -71,9 +76,30 @@ void SpawnEnemy() {
   newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
   newEnemy->SetPos(map0Path[0].x, map0Path[0].y);
 
+  // TESTING
+  // for fun!
+  newEnemy->SetProjectileSpeed(5);
+  newEnemy->SetFireRate(999);
+
   // add enemy to reg
   gEnemies.push_back(newEnemy);
 }
+
+// towers
+// i think we can just use enemy class for this
+// yea
+
+int towerTargetX = 0;
+int towerTargetY = 0;
+
+RTexture tTowerBase;
+
+SDL_Rect cTowerBase[] = {{0, 0, 128, 128}};
+
+RSprite sTowerBase(&tTowerBase, cTowerBase, 1);
+
+// test tower
+REnemy testTower(&sTowerBase, &sEnemy0Weapon, sfxShoot);
 
 // event handling
 int mouseX = 0;
@@ -203,6 +229,11 @@ bool LoadMedia() {
   tBall.ModColor(255, 0, 0);
   tBall.SetScale(4);
 
+  if (!tTowerBase.LoadFromFile(gRenderer, "../assets/r-tower-base.png", {255, 255, 255, 255})) {
+    PrintError();
+    success = false;
+  }
+
   if (!tEnemy0.LoadFromFile(gRenderer, "../assets/r-tank-body.png",
                             {255, 255, 255})) {
     PrintError();
@@ -215,8 +246,15 @@ bool LoadMedia() {
     success = false;
   }
 
+  if (!tCrosshair.LoadFromFile(gRenderer, "../assets/crosshair.png")) {
+    PrintError();
+    success = false;
+  }
+
+  tCrosshair.SetScale(5);
+
   sfxShoot = Mix_LoadWAV("../assets/shoot.wav");
-  if (!sfxShoot){
+  if (!sfxShoot) {
     PrintError();
     success = false;
   }
@@ -264,6 +302,12 @@ int main() {
   vlGroup.SetPadding(60, 60);
   vlGroup.Apply();
 
+  // TESTING
+  // setup test tower
+  testTower.SetPos((float)LEVEL_WIDTH / 2, (float)LEVEL_HEIGHT / 2);
+  testTower.SetProjectileSpeed(15);
+  testTower.SetFireRate(100);
+
   SDL_Event e;
 
   bool quit = false;
@@ -292,8 +336,10 @@ int main() {
       }
 
       // set target mouse coords; will be changed
-      else if (e.type == SDL_MOUSEMOTION) {
-        SDL_GetMouseState(&mouseX, &mouseY);
+      else if (e.type == SDL_MOUSEBUTTONDOWN) {
+        if (e.button.button == SDL_BUTTON_LEFT) {
+          SDL_GetMouseState(&enemyTargetX, &enemyTargetY);
+        }
       }
 
       buttonA.HandleEvent(&e);
@@ -336,7 +382,7 @@ int main() {
     // upd enemies
     for (int i = 0; i < gEnemies.size(); ++i) {
       gEnemies[i]->MoveAlongPath();
-      gEnemies[i]->SetTarget(mouseX, mouseY);
+      gEnemies[i]->SetTarget(enemyTargetX, enemyTargetY);
 
       // this is kinda misleading; it seems like a call-once but it needs to run
       // on update
@@ -344,6 +390,20 @@ int main() {
 
       gEnemies[i]->Render(gRenderer, dt);
     }
+
+    // TESTING
+    // upd tower
+    
+    // make it point at the first enemy
+    if (gEnemies.size() > 0){
+      towerTargetX = gEnemies[0]->GetPosX();  
+      towerTargetY = gEnemies[0]->GetPosY();  
+      
+      testTower.SetTarget(towerTargetX, towerTargetY);
+    }
+
+    testTower.Shoot(&tBall, gProjectiles, dt);
+    testTower.Render(gRenderer, dt);
 
     // upd projectiles
     for (int i = 0; i < gProjectiles.size(); ++i) {
@@ -353,6 +413,8 @@ int main() {
 
     // render ui
     vlGroup.Render(gRenderer);
+
+    tCrosshair.Render(gRenderer, enemyTargetX, enemyTargetY, NULL, true);
 
     SDL_RenderPresent(gRenderer);
 
