@@ -76,6 +76,10 @@ int REntity::GetPosY(){
   return posY;
 }
 
+float REntity::GetFireRate(){
+  return fireRate;
+}
+
 void REntity::SetPos(float x, float y) {
   posX = x;
   posY = y;
@@ -97,6 +101,10 @@ void REntity::SetProjectileSpeed(int speed){
 
 void REntity::SetFireRate(int rate){
   fireRate = rate;
+}
+
+void REntity::AddToShootTimer(float amt){
+  shootTimer.AddOffset(amt);
 }
 
 void REntity::SetPath(SDL_Point *path, int pathLength) {

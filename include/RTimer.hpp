@@ -10,6 +10,7 @@ public:
   void Start();
   void Stop();
   void Reset();
+  void AddOffset(float amt);
   void Tick(float dt);
 
 private:

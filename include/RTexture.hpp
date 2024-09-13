@@ -1,8 +1,8 @@
 #ifndef RTEXTURE_H
 #define RTEXTURE_H
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL.h>
+#include <SDL_ttf.h>
 
 class RTexture {
 public:
@@ -12,10 +12,12 @@ public:
 #if defined(SDL_TTF_MAJOR_VERSION)
 
   bool LoadFromRenderedText(SDL_Renderer *renderer, TTF_Font *font,
-                            const char *text, SDL_Color tColor);
+                            const char *text, Uint8 r = 255, Uint8 g = 255,
+                            Uint8 b = 255);
 #endif
 
-  bool LoadFromFile(SDL_Renderer *renderer, const char *path, SDL_Color key = {0, 0, 0, 0});
+  bool LoadFromFile(SDL_Renderer *renderer, const char *path, Uint8 r = 0,
+                    Uint8 g = 0, Uint8 b = 0);
   void Free();
   void SetBlendMode(SDL_BlendMode blendMode);
   void ModColor(Uint8 r, Uint8 g, Uint8 b);

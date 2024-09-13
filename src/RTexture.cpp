@@ -8,7 +8,10 @@ RTexture::RTexture() {
   width = 0;
   height = 0;
   scale = 1;
-  renderDest = {0, 0, 0, 0};
+  renderDest.x = 0;
+  renderDest.y = 0;
+  renderDest.w = 0;
+  renderDest.h = 0;
 }
 
 RTexture::~RTexture() { Free(); }
@@ -16,11 +19,13 @@ RTexture::~RTexture() { Free(); }
 #if defined(SDL_TTF_MAJOR_VERSION)
 
 bool RTexture::LoadFromRenderedText(SDL_Renderer *renderer, TTF_Font *font,
-                                    const char *text, SDL_Color tColor) {
+                                    const char *text, Uint8 r, Uint8 g,
+                                    Uint8 b) {
 
   Free();
 
-  SDL_Surface *tSurf = TTF_RenderText_Solid(font, text, tColor);
+  SDL_Color tSurfColor = {r, g, b, 255};
+  SDL_Surface *tSurf = TTF_RenderText_Solid(font, text, tSurfColor);
   if (tSurf == NULL) {
     printf("Unable to render text: %s\n", SDL_GetError());
     return false;
@@ -42,8 +47,8 @@ bool RTexture::LoadFromRenderedText(SDL_Renderer *renderer, TTF_Font *font,
 
 #endif
 
-bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path,
-                            SDL_Color key) {
+bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path, Uint8 r,
+                            Uint8 g, Uint8 b) {
 
   Free();
 
@@ -54,8 +59,7 @@ bool RTexture::LoadFromFile(SDL_Renderer *renderer, const char *path,
     return false;
   }
 
-  SDL_SetColorKey(lSurf, SDL_TRUE,
-                  SDL_MapRGB(lSurf->format, key.r, key.g, key.b));
+  SDL_SetColorKey(lSurf, SDL_TRUE, SDL_MapRGB(lSurf->format, r, g, b));
 
   SDL_Texture *nTexture = SDL_CreateTextureFromSurface(renderer, lSurf);
 
@@ -97,15 +101,18 @@ void RTexture::ModAlpha(Uint8 a) { SDL_SetTextureAlphaMod(texture, a); }
 void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
                       bool center) {
 
-  renderDest = {x, y, width, height};
+  renderDest.x = x;
+  renderDest.y = y;
 
   if (clip != NULL) {
-    renderDest.w = clip->w;
-    renderDest.h = clip->h;
+    renderDest.w = clip->w * scale;
+    renderDest.h = clip->h * scale;
   }
-
-  renderDest.w *= scale;
-  renderDest.h *= scale;
+  
+  else{
+    renderDest.w = width * scale;
+    renderDest.h = height * scale;
+  }
 
   if (center) {
     renderDest.x -= renderDest.w / 2;
@@ -117,15 +124,18 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
 
 void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
                       double angle, SDL_Point *center, SDL_RendererFlip flip) {
-  renderDest = {x, y, width, height};
+  renderDest.x = x;
+  renderDest.y = y;
 
   if (clip != NULL) {
-    renderDest.w = clip->w;
-    renderDest.h = clip->h;
+    renderDest.w = clip->w * scale;
+    renderDest.h = clip->h * scale;
   }
 
-  renderDest.w *= scale;
-  renderDest.h *= scale;
+  else {
+    renderDest.w = width * scale;
+    renderDest.h = height * scale;
+  }
 
   SDL_RenderCopyEx(renderer, texture, clip, &renderDest, angle, center, flip);
 }
@@ -133,7 +143,10 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
 void RTexture::Render(SDL_Renderer *renderer, int x, int y, int w, int h,
                       SDL_Rect *clip) {
 
-  renderDest = {x, y, w, h};
+  renderDest.x = x;
+  renderDest.y = y;
+  renderDest.w = w;
+  renderDest.h = h;
 
   SDL_RenderCopy(renderer, texture, clip, &renderDest);
 }

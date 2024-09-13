@@ -17,8 +17,8 @@ public:
   void SetDimensions(int w, int h);
   void SetPosition(int x, int y);
   void SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text,
-               SDL_Color color = {0, 0, 0, 255});
-  void SetAreaColor(SDL_Color color);
+               Uint8 r, Uint8 g, Uint8 b);
+  void SetAreaColor(Uint8 r, Uint8 g, Uint8 b);
 
   void Render(SDL_Renderer *renderer);
 
@@ -36,15 +36,11 @@ public:
     this->graphic = graphic;
     this->onClick = action;
   }
-  
-  void SetAction(void (*action)()){
-    this->onClick = action;
-  }
 
-  void SetGraphic(RGraphic *graphic){
-    this->graphic = graphic;
-  }
-  
+  void SetAction(void (*action)()) { this->onClick = action; }
+
+  void SetGraphic(RGraphic *graphic) { this->graphic = graphic; }
+
   void HandleEvent(SDL_Event *e) {
 
     // check if mouse clicking
@@ -61,10 +57,10 @@ public:
           mouseY > area->y + area->h) {
         return;
       }
-  
+
       // check if press; if so run action
-      if (e->button.button == SDL_BUTTON_LEFT){
-        if (onClick != NULL){
+      if (e->button.button == SDL_BUTTON_LEFT) {
+        if (onClick != NULL) {
           onClick();
         }
       }

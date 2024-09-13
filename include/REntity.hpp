@@ -37,12 +37,14 @@ public:
 
   int GetPosX();
   int GetPosY();
+  float GetFireRate();
 
   void SetPos(float x, float y);
   void SetVel(float vx, float vy);
   void SetTarget(float x, float y);
   void SetProjectileSpeed(int speed);
   void SetFireRate(int rate);
+  void AddToShootTimer(float amt);
   void SetPath(SDL_Point *path, int pathLength);
   void SetSpeed(int speed);
 

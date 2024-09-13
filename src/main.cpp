@@ -37,19 +37,25 @@ SDL_Surface *gWindowSurface = NULL;
 SDL_Renderer *gRenderer = NULL;
 TTF_Font *gFont = NULL;
 
-std::chrono::time_point lastUpdateTime =
-    std::chrono::high_resolution_clock::now();
+auto lastUpdateTime = std::chrono::high_resolution_clock::now();
 
 float targetFps = 120;
 float dt = 0;
 
 // sfx/sound
-Mix_Chunk *sfxShoot;
+Mix_Chunk *sfxShootEnemy;
+Mix_Chunk *sfxShootTower; 
 
 // map
 RTexture tMap0;
 const int MAP_0_PATH_LENGTH = 13;
 SDL_Point map0Path[MAP_0_PATH_LENGTH];
+
+void SetPoint(SDL_Point *path, int i, int x, int y) {
+  // dangerous! can cause segfaults with this; there's no boundscheck
+  path[i].x = x;
+  path[i].y = y;
+}
 
 // enemies
 RTexture tEnemy;
@@ -70,7 +76,7 @@ int enemyTargetX = 0;
 int enemyTargetY = 0;
 
 void SpawnEnemy() {
-  REntity *newEnemy = new REntity(&sEnemy, &sEnemyWeapon, sfxShoot);
+  REntity *newEnemy = new REntity(&sEnemy, &sEnemyWeapon, sfxShootEnemy);
 
   // make enemy follow path
   newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
@@ -111,10 +117,13 @@ void SpawnTower(int gridX, int gridY) {
   gridX = gridX * TILE_WIDTH + TILE_WIDTH / 2;
   gridY = gridY * TILE_HEIGHT + TILE_HEIGHT / 2;
 
-  REntity *newTower = new REntity(&sTowerBase, &sTowerWeapon, NULL);
+  REntity *newTower = new REntity(&sTowerBase, &sTowerWeapon, sfxShootTower);
 
   // spawn tower in coords relative to grid
   newTower->SetPos(gridX, gridY);
+
+  // add a small, random offset to the shoot timer
+  newTower->AddToShootTimer((rand() % 100) / (float)100);
 
   gTowers.push_back(newTower);
 }
@@ -219,19 +228,19 @@ bool LoadMedia() {
 
   // set map points, in unscaled coords (e.g. 10, 7 refers to 10 tiles x, 7
   // tiles y)
-  map0Path[0] = {0, 5};
-  map0Path[1] = {8, 5};
-  map0Path[2] = {8, 2};
-  map0Path[3] = {6, 2};
-  map0Path[4] = {6, 10};
-  map0Path[5] = {4, 10};
-  map0Path[6] = {4, 7};
-  map0Path[7] = {9, 7};
-  map0Path[8] = {9, 6};
-  map0Path[9] = {11, 6};
-  map0Path[10] = {11, 10};
-  map0Path[11] = {8, 10};
-  map0Path[12] = {8, 12};
+  SetPoint(map0Path, 0, 0, 5);
+  SetPoint(map0Path, 1, 8, 5);
+  SetPoint(map0Path, 2, 8, 2);
+  SetPoint(map0Path, 3, 6, 2);
+  SetPoint(map0Path, 4, 6, 10);
+  SetPoint(map0Path, 5, 4, 10);
+  SetPoint(map0Path, 6, 4, 7);
+  SetPoint(map0Path, 7, 9, 7);
+  SetPoint(map0Path, 8, 9, 6);
+  SetPoint(map0Path, 9, 11, 6);
+  SetPoint(map0Path, 10, 11, 10);
+  SetPoint(map0Path, 11, 8, 10);
+  SetPoint(map0Path, 12, 8, 12);
 
   for (int i = 0; i < MAP_0_PATH_LENGTH; ++i) {
     // scale up point coords to match screen coords
@@ -255,12 +264,12 @@ bool LoadMedia() {
     PrintError();
     success = false;
   }
-  
+
   tBallBlue.ModColor(0, 0, 255);
   tBallBlue.SetScale(4);
 
-  if (!tTowerBase.LoadFromFile(gRenderer, "../assets/b-tower-base.png",
-                               {255, 255, 255})) {
+  if (!tTowerBase.LoadFromFile(gRenderer, "../assets/b-tower-base.png", 255,
+                               255, 255)) {
     PrintError();
     success = false;
   }
@@ -270,14 +279,14 @@ bool LoadMedia() {
     success = false;
   }
 
-  if (!tEnemy.LoadFromFile(gRenderer, "../assets/r-tank-body.png",
-                           {255, 255, 255})) {
+  if (!tEnemy.LoadFromFile(gRenderer, "../assets/r-tank-body.png", 255, 255,
+                           255)) {
     PrintError();
     success = false;
   }
 
-  if (!tEnemyWeapon.LoadFromFile(gRenderer, "../assets/r-tank-turret1.png",
-                                 {255, 255, 255})) {
+  if (!tEnemyWeapon.LoadFromFile(gRenderer, "../assets/r-tank-turret1.png", 255,
+                                 255, 255)) {
     PrintError();
     success = false;
   }
@@ -287,10 +296,16 @@ bool LoadMedia() {
     success = false;
   }
 
-  tCrosshair.SetScale(5);
+  tCrosshair.SetScale(7);
 
-  sfxShoot = Mix_LoadWAV("../assets/shoot.wav");
-  if (!sfxShoot) {
+  sfxShootEnemy = Mix_LoadWAV("../assets/shoot.wav");
+  if (!sfxShootEnemy) {
+    PrintError();
+    success = false;
+  }
+
+  sfxShootTower = Mix_LoadWAV("../assets/shoot1.wav");
+  if (!sfxShootEnemy){
     PrintError();
     success = false;
   }
@@ -304,7 +319,7 @@ void Close() {
   tEnemyWeapon.Free();
   tBallRed.Free();
 
-  Mix_FreeChunk(sfxShoot);
+  Mix_FreeChunk(sfxShootEnemy);
 
   SDL_DestroyRenderer(gRenderer);
   gRenderer = NULL;
@@ -327,7 +342,7 @@ int main() {
   }
 
   // setup button graphics
-  graphicA.SetAreaColor({255, 0, 0, 255});
+  graphicA.SetAreaColor(255, 0, 0);
 
   // setup button
 
@@ -352,8 +367,7 @@ int main() {
 
   bool quit = false;
   while (!quit) {
-    std::chrono::time_point currentTime =
-        std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
 
     dt = std::chrono::duration<float, std::chrono::seconds::period>(
              currentTime - lastUpdateTime)
@@ -438,6 +452,9 @@ int main() {
       towerTargetY = gEnemies[0]->GetPosY();
     }
 
+    // render crosshair
+    tCrosshair.Render(gRenderer, enemyTargetX, enemyTargetY, NULL, true);
+
     // upd tower
     for (int i = 0; i < gTowers.size(); ++i) {
       gTowers[i]->SetTarget(towerTargetX, towerTargetY);
@@ -454,7 +471,8 @@ int main() {
     // render ui
     vlGroup.Render(gRenderer);
 
-    tCrosshair.Render(gRenderer, enemyTargetX, enemyTargetY, NULL, true);
+    // debug drawing
+    // DrawPath(gRenderer, map0Path, MAP_0_PATH_LENGTH);
 
     SDL_RenderPresent(gRenderer);
 

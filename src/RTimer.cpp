@@ -13,6 +13,10 @@ void RTimer::Start() { running = true; }
 
 void RTimer::Stop() { running = false; }
 
+void RTimer::AddOffset(float amt){
+  timer += amt;
+}
+
 void RTimer::Tick(float dt) {
   timer += dt;
 }

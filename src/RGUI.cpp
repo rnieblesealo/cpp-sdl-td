@@ -1,8 +1,15 @@
 #include "RGUI.hpp"
 
 RGraphic::RGraphic() {
-  areaColor = {255, 255, 255, 255};
-  textColor = {0, 0, 0, 255};
+  areaColor.r = 255;
+  areaColor.g = 255;
+  areaColor.b = 255;
+  areaColor.a = 255;
+
+  textColor.r = 0;
+  textColor.g = 0;
+  textColor.b = 0;
+  textColor.a = 255;
 }
 
 SDL_Rect *RGraphic::GetArea() { return &area; }
@@ -18,15 +25,14 @@ void RGraphic::SetPosition(int x, int y) {
 }
 
 void RGraphic::SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text,
-                       SDL_Color color) {
-  this->text.LoadFromRenderedText(renderer, font, text, color);
+                       Uint8 r, Uint8 g, Uint8 b) {
+  this->text.LoadFromRenderedText(renderer, font, text, r, g, b);
 }
 
-void RGraphic::SetAreaColor(SDL_Color color) {
-  areaColor.r = color.r;
-  areaColor.g = color.g;
-  areaColor.b = color.b;
-  areaColor.a = color.a;
+void RGraphic::SetAreaColor(Uint8 r, Uint8 g, Uint8 b) {
+  areaColor.r = r;
+  areaColor.g = g;
+  areaColor.b = b;
 }
 
 void RGraphic::Render(SDL_Renderer *renderer) {
