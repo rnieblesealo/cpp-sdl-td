@@ -1,8 +1,11 @@
 ## Todo
 
+- [ ] Damage/health system
+    - [ ] Enemy/tower healthbars
 - [ ] Enemy colors
 - [ ] Music
 - [x] Click to set target
+    - [ ] Snap to clicked enemy
 - [x] Towers!
 
 ## Notes
@@ -30,3 +33,6 @@ Tower defense game, but you control the invaders instead!
 2. Hard-code paths by hand
 
 This is the least confusing + most painless way to do things!
+
+### Display Scaling
+Exact multiples of 128 only, since this is the tilesize used throughout; use a single global scale factor applied to everything

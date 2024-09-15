@@ -143,6 +143,46 @@ void REntity::MoveAlongPath() {
   posY += (velY * speed);
 }
 
+bool REntity::CheckCollision(SDL_Rect *a, SDL_Rect *b){
+  // sides of both rects
+  int leftA, leftB;
+  int rightA, rightB;
+  int topA, topB;
+  int bottomA, bottomB;
+
+  // calculate sides of a
+  leftA = a->x;
+  rightA = a->x + a->w;
+  topA = a->y;
+  bottomA = a->y + a->h;
+
+  // calculate sides of b
+  leftB = b->x;
+  rightB = b->x + b->w;
+  topB = b->y;
+  bottomB = b->y + b->h;
+
+  // if any sides from a are outside b
+  if (bottomA <= topB) {
+    return false;
+  }
+
+  if (topA >= bottomB) {
+    return false;
+  }
+
+  if (rightA <= leftB) {
+    return false;
+  }
+
+  if (leftA >= rightB) {
+    return false;
+  }
+
+  // if no sides of a are outside b
+  return true;
+}
+
 void REntity::Shoot(RTexture *projectileTexture,
                    std::vector<RProjectile *> &gRProjectiles, float dt) {
 

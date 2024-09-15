@@ -39,6 +39,8 @@ public:
   int GetPosY();
   float GetFireRate();
 
+  bool CheckCollision(SDL_Rect *a, SDL_Rect *b);
+
   void SetPos(float x, float y);
   void SetVel(float vx, float vy);
   void SetTarget(float x, float y);
