@@ -15,7 +15,7 @@ public:
   int GetHeightUnscaled();
   bool GetMovedFrame();
   float GetFrameTimer();
-  SDL_Point GetCenter();
+  SDL_Rect *GetRect();
 
   void SetFPS(int fps);
   void SetFrame(int f);

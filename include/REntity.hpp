@@ -38,8 +38,10 @@ public:
   int GetPosX();
   int GetPosY();
   float GetFireRate();
+  SDL_Rect *GetRect();
 
   bool CheckCollision(SDL_Rect *a, SDL_Rect *b);
+  bool CheckCollision(SDL_Rect *a, int x, int y);
 
   void SetPos(float x, float y);
   void SetVel(float vx, float vy);

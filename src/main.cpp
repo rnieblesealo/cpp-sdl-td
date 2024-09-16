@@ -435,6 +435,11 @@ int main() {
 
     // upd enemies
     for (int i = 0; i < gEnemies.size(); ++i) {
+      SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
+      SDL_RenderDrawRect(gRenderer, gEnemies[i]->GetRect()); 
+      SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
+
+
       gEnemies[i]->MoveAlongPath();
       gEnemies[i]->SetTarget(enemyTargetX, enemyTargetY);
 
@@ -457,6 +462,10 @@ int main() {
 
     // upd tower
     for (int i = 0; i < gTowers.size(); ++i) {
+      SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 255);
+      SDL_RenderDrawRect(gRenderer, gTowers[i]->GetRect());
+      SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
+
       gTowers[i]->SetTarget(towerTargetX, towerTargetY);
       gTowers[i]->Shoot(&tBallBlue, gProjectiles, dt);
       gTowers[i]->Render(gRenderer, dt);

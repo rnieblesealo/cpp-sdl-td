@@ -171,4 +171,8 @@ int RTexture::GetWidthUnscaled() { return width; }
 
 int RTexture::GetHeightUnscaled() { return height; }
 
+SDL_Rect *RTexture::GetRect(){
+  return &renderDest;
+}
+
 void RTexture::SetScale(int nScale) { scale = nScale; }

@@ -13,6 +13,10 @@ RSprite::RSprite(RTexture *spriteSheet, SDL_Rect *spriteClips, int nFrames) {
   fps = 4;
 }
 
+SDL_Rect *RSprite::GetRect(){
+  return spriteSheet->GetRect();
+}
+
 float RSprite::GetFrameTimer() { return this->fTimer; }
 
 bool RSprite::GetMovedFrame() { return movedFrame; }

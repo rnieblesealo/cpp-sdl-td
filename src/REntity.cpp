@@ -38,7 +38,8 @@ void RProjectile::Render(SDL_Renderer *renderer) {
   texture->Render(renderer, posX, posY, NULL, true);
 }
 
-REntity::REntity(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound) {
+REntity::REntity(RSprite *bodySprite, RSprite *weaponSprite,
+                 Mix_Chunk *shootSound) {
   this->bodySprite = bodySprite;
   this->weaponSprite = weaponSprite;
   this->shootSound = shootSound;
@@ -68,16 +69,16 @@ REntity::REntity(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSou
 
 bool REntity::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
 
-int REntity::GetPosX(){
-  return posX;
-}
+int REntity::GetPosX() { return posX; }
 
-int REntity::GetPosY(){
-  return posY;
-}
+int REntity::GetPosY() { return posY; }
 
-float REntity::GetFireRate(){
-  return fireRate;
+float REntity::GetFireRate() { return fireRate; }
+
+SDL_Rect *REntity::GetRect() {
+  // use body sprite draw rect for now
+  // probably going to use something else as collider in the future
+  return bodySprite->GetRect();
 }
 
 void REntity::SetPos(float x, float y) {
@@ -95,17 +96,11 @@ void REntity::SetTarget(float x, float y) {
   targetY = y;
 }
 
-void REntity::SetProjectileSpeed(int speed){
-  projectileSpeed = speed;
-}
+void REntity::SetProjectileSpeed(int speed) { projectileSpeed = speed; }
 
-void REntity::SetFireRate(int rate){
-  fireRate = rate;
-}
+void REntity::SetFireRate(int rate) { fireRate = rate; }
 
-void REntity::AddToShootTimer(float amt){
-  shootTimer.AddOffset(amt);
-}
+void REntity::AddToShootTimer(float amt) { shootTimer.AddOffset(amt); }
 
 void REntity::SetPath(SDL_Point *path, int pathLength) {
   this->path = path;
@@ -143,7 +138,7 @@ void REntity::MoveAlongPath() {
   posY += (velY * speed);
 }
 
-bool REntity::CheckCollision(SDL_Rect *a, SDL_Rect *b){
+bool REntity::CheckCollision(SDL_Rect *a, SDL_Rect *b) {
   // sides of both rects
   int leftA, leftB;
   int rightA, rightB;
@@ -183,8 +178,35 @@ bool REntity::CheckCollision(SDL_Rect *a, SDL_Rect *b){
   return true;
 }
 
+bool REntity::CheckCollision(SDL_Rect *a, int x, int y){
+  // check if (x, y) is inside a
+  int leftA = a->x;
+  int rightA = a->x + a->w;
+  int topA = a->y;
+  int bottomA = a->y + a->h;
+  
+
+  if (x < leftA){
+    return false;
+  }
+
+  if (x > rightA){ 
+    return false;
+  }
+
+  if (y < topA){
+    return false;
+  }
+
+  if (y > bottomA){ 
+    return false;
+  }
+
+  return true;
+}
+
 void REntity::Shoot(RTexture *projectileTexture,
-                   std::vector<RProjectile *> &gRProjectiles, float dt) {
+                    std::vector<RProjectile *> &gRProjectiles, float dt) {
 
   // this is the shoot timer
   shootTimer.Tick(dt);

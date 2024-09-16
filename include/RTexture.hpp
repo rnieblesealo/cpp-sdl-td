@@ -34,6 +34,7 @@ public:
   int GetHeight();
   int GetWidthUnscaled();
   int GetHeightUnscaled();
+  SDL_Rect *GetRect();
   void SetScale(int nScale);
 
 private:
