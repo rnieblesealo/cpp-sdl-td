@@ -8,12 +8,16 @@
 #include <SDL_render.h>
 #include <vector>
 
+// you can do this ???
+class REntity;
+
 class RProjectile {
 public:
-  RProjectile(RTexture *projectileTexture);
+  RProjectile(REntity* issuer, RTexture *projectileTexture);
 
   int GetPosX();
   int GetPosY();
+  REntity *GetIssuer();
 
   void SetPos(int x, int y);
   void SetVel(int vx, int vy);
@@ -27,6 +31,7 @@ private:
   int velX, velY;
 
   RTexture *texture;
+  REntity *issuer;
 };
 
 class REntity {
@@ -37,11 +42,13 @@ public:
 
   int GetPosX();
   int GetPosY();
+  int GetProjectileDamage();
+  int GetHealth();
   float GetFireRate();
   SDL_Rect *GetRect();
 
-  bool CheckCollision(SDL_Rect *a, SDL_Rect *b);
-  bool CheckCollision(SDL_Rect *a, int x, int y);
+  static bool CheckCollision(SDL_Rect *a, SDL_Rect *b);
+  static bool CheckCollision(SDL_Rect *a, int x, int y);
 
   void SetPos(float x, float y);
   void SetVel(float vx, float vy);
@@ -52,11 +59,16 @@ public:
   void SetPath(SDL_Point *path, int pathLength);
   void SetSpeed(int speed);
 
+  void Damage(int amt);
+  void Heal(int amt);
+
   void Move();
   void MoveAlongPath();
 
-  void Shoot(RTexture *projectileTexture, std::vector<RProjectile *>& gRProjectiles, float dt);
+  void Shoot(RTexture *projectileTexture,
+             std::vector<RProjectile *> &gRProjectiles, float dt);
 
+  void RenderHealthBar(SDL_Renderer *renderer);
   void Render(SDL_Renderer *renderer, float dt);
 
 private:
@@ -69,9 +81,11 @@ private:
   float posX, posY;
   float velX, velY;
   float targetX, targetY;
-  
+
   int speed;
+
   int projectileSpeed;
+  int projectileDamage;
 
   SDL_Point *path;
   int pathLength;
@@ -80,9 +94,13 @@ private:
   // used for projectile motion, set by rendering
   RTimer shootTimer;
   float weaponAngle;
- 
+
   // in seconds
   float fireRate;
+
+  // health stuff
+  int maxHealth;
+  int health;
 };
 
 #endif

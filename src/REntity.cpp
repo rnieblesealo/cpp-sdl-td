@@ -6,18 +6,22 @@
 
 const double PI = 3.14159265358979323846;
 
-RProjectile::RProjectile(RTexture *projectileTexture) {
+RProjectile::RProjectile(REntity *issuer, RTexture *projectileTexture) {
   posX = 0;
   posY = 0;
   velX = 0;
   velY = 0;
 
   texture = projectileTexture;
+
+  this->issuer = issuer;
 }
 
 int RProjectile::GetPosX() { return posX; }
 
 int RProjectile::GetPosY() { return posY; }
+
+REntity *RProjectile::GetIssuer() { return issuer; }
 
 void RProjectile::SetPos(int x, int y) {
   posX = x;
@@ -54,7 +58,9 @@ REntity::REntity(RSprite *bodySprite, RSprite *weaponSprite,
   targetY = -1;
 
   speed = 2;
+
   projectileSpeed = 20;
+  projectileDamage = 1;
 
   path = NULL;
   pathLength = -1;
@@ -65,6 +71,10 @@ REntity::REntity(RSprite *bodySprite, RSprite *weaponSprite,
 
   // start shoot timer right away
   shootTimer.Start();
+
+  // start at full health
+  maxHealth = 100;
+  health = maxHealth;
 }
 
 bool REntity::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
@@ -72,6 +82,10 @@ bool REntity::IsAtEndOfPath() { return nextPathPoint >= pathLength; }
 int REntity::GetPosX() { return posX; }
 
 int REntity::GetPosY() { return posY; }
+
+int REntity::GetProjectileDamage() { return projectileDamage; }
+
+int REntity::GetHealth() { return health; }
 
 float REntity::GetFireRate() { return fireRate; }
 
@@ -111,6 +125,26 @@ void REntity::SetPath(SDL_Point *path, int pathLength) {
 }
 
 void REntity::SetSpeed(int speed) { this->speed = speed; }
+
+void REntity::Damage(int amt) {
+  if (health - amt < 0) {
+    health = 0;
+  }
+
+  else {
+    health = health - amt;
+  }
+}
+
+void REntity::Heal(int amt) {
+  if (health + amt > maxHealth) {
+    health = maxHealth;
+  }
+
+  else {
+    health = health + amt;
+  }
+}
 
 void REntity::MoveAlongPath() {
   if (path == NULL || IsAtEndOfPath()) {
@@ -178,27 +212,26 @@ bool REntity::CheckCollision(SDL_Rect *a, SDL_Rect *b) {
   return true;
 }
 
-bool REntity::CheckCollision(SDL_Rect *a, int x, int y){
+bool REntity::CheckCollision(SDL_Rect *a, int x, int y) {
   // check if (x, y) is inside a
   int leftA = a->x;
   int rightA = a->x + a->w;
   int topA = a->y;
   int bottomA = a->y + a->h;
-  
 
-  if (x < leftA){
+  if (x < leftA) {
     return false;
   }
 
-  if (x > rightA){ 
+  if (x > rightA) {
     return false;
   }
 
-  if (y < topA){
+  if (y < topA) {
     return false;
   }
 
-  if (y > bottomA){ 
+  if (y > bottomA) {
     return false;
   }
 
@@ -206,7 +239,7 @@ bool REntity::CheckCollision(SDL_Rect *a, int x, int y){
 }
 
 void REntity::Shoot(RTexture *projectileTexture,
-                    std::vector<RProjectile *> &gRProjectiles, float dt) {
+                    std::vector<RProjectile *> &gProjectiles, float dt) {
 
   // this is the shoot timer
   shootTimer.Tick(dt);
@@ -214,7 +247,7 @@ void REntity::Shoot(RTexture *projectileTexture,
   // fire on set interval
   if (shootTimer.GetTime() > 1 / fireRate) {
     // don't forget to handle this dynamic mem!
-    RProjectile *n = new RProjectile(projectileTexture);
+    RProjectile *n = new RProjectile(this, projectileTexture);
 
     // calculate target using weapon angle
     n->SetVel((int)(SDL_cosf(weaponAngle) * projectileSpeed),
@@ -223,7 +256,7 @@ void REntity::Shoot(RTexture *projectileTexture,
     n->SetPos(this->posX, this->posY);
 
     // add this projectile to registry
-    gRProjectiles.push_back(n);
+    gProjectiles.push_back(n);
 
     // play shoot sound
     Mix_PlayChannel(-1, shootSound, 0);
@@ -251,4 +284,39 @@ void REntity::Render(SDL_Renderer *renderer, float dt) {
   // 90 accounts for initial rotation
   weaponSprite->Render(renderer, dt, rPosX, rPosY,
                        weaponAngle * (180 / PI) + 90);
+
+  // draw the healthbar
+  RenderHealthBar(renderer);
+}
+
+void REntity::RenderHealthBar(SDL_Renderer *renderer) {
+  int barPad = 3;
+  int yCenterOffset = (float)bodySprite->GetHeight() / 2 - 15;
+
+  SDL_Rect frame;
+
+  frame.w = 120;
+  frame.h = 15;
+  frame.x = posX - (float)frame.w / 2;
+  frame.y = posY + yCenterOffset;
+
+  SDL_Rect bar;
+
+  int maxBarWidth = frame.w - 2 * barPad;
+  int currBarWidth = maxBarWidth * ((float)health / maxHealth);
+
+  bar.x = frame.x + barPad;
+  bar.y = frame.y + barPad;
+  bar.w = currBarWidth;
+  bar.h = frame.h - 2 * barPad;
+
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+  SDL_RenderFillRect(renderer, &frame);
+
+  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+  SDL_RenderFillRect(renderer, &bar);
+
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 }

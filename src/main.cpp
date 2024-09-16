@@ -44,7 +44,7 @@ float dt = 0;
 
 // sfx/sound
 Mix_Chunk *sfxShootEnemy;
-Mix_Chunk *sfxShootTower; 
+Mix_Chunk *sfxShootTower;
 
 // map
 RTexture tMap0;
@@ -305,7 +305,7 @@ bool LoadMedia() {
   }
 
   sfxShootTower = Mix_LoadWAV("../assets/shoot1.wav");
-  if (!sfxShootEnemy){
+  if (!sfxShootEnemy) {
     PrintError();
     success = false;
   }
@@ -408,22 +408,17 @@ int main() {
       if (projectile->GetPosX() < 0 || projectile->GetPosX() > LEVEL_WIDTH ||
           projectile->GetPosY() < 0 || projectile->GetPosY() > LEVEL_HEIGHT) {
 
-        // remove ith element
+        // remove ith element; vector erases this for us
         gProjectiles.erase(gProjectiles.begin() + i);
-
-        // free memory (does vector erase do this for us?)
-        delete projectile;
       }
     }
 
-    // clear offbounds enemies
+    // clear enemies that have cleared the path
     for (int i = 0; i < gEnemies.size(); ++i) {
       REntity *enemy = gEnemies[i];
 
       if (enemy->IsAtEndOfPath()) {
         gEnemies.erase(gEnemies.begin() + i);
-
-        delete enemy;
       }
     }
 
@@ -435,22 +430,44 @@ int main() {
 
     // upd enemies
     for (int i = 0; i < gEnemies.size(); ++i) {
-      SDL_SetRenderDrawColor(gRenderer, 255, 0, 0, 255);
-      SDL_RenderDrawRect(gRenderer, gEnemies[i]->GetRect()); 
-      SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
+      SDL_Rect *rect = gEnemies[i]->GetRect();
 
+      // check for projectile collisions
+      for (int j = 0; j < gProjectiles.size(); ++j) {
+        // don't check own projectiles
+        if (gProjectiles[j]->GetIssuer() == gEnemies[i]) {
+          continue;
+        }
+
+        int projectileX = gProjectiles[j]->GetPosX();
+        int projectileY = gProjectiles[j]->GetPosY();
+
+        // if tower projectile hit enemy...
+        if (REntity::CheckCollision(rect, projectileX, projectileY)) {
+          REntity *projectileIssuer = gProjectiles[j]->GetIssuer();
+
+          // need issuer information to apply things like damage
+          if (projectileIssuer != NULL) {
+            // damage enemy
+            gEnemies[i]->Damage(projectileIssuer->GetProjectileDamage());
+            
+            // if health reaches zero, kill enemy
+            if (gEnemies[i]->GetHealth() == 0){
+              gEnemies.erase(gEnemies.begin() + i);
+            }
+          }
+
+          // erase projectile
+          gProjectiles.erase(gProjectiles.begin() + j);
+        }
+      }
 
       gEnemies[i]->MoveAlongPath();
       gEnemies[i]->SetTarget(enemyTargetX, enemyTargetY);
-
-      // this is kinda misleading; it seems like a call-once but it needs to run
-      // on update
       gEnemies[i]->Shoot(&tBallRed, gProjectiles, dt);
-
       gEnemies[i]->Render(gRenderer, dt);
     }
 
-    // TESTING
     // make towers shoot at first enemy
     if (gEnemies.size() > 0) {
       towerTargetX = gEnemies[0]->GetPosX();
@@ -462,10 +479,6 @@ int main() {
 
     // upd tower
     for (int i = 0; i < gTowers.size(); ++i) {
-      SDL_SetRenderDrawColor(gRenderer, 0, 0, 255, 255);
-      SDL_RenderDrawRect(gRenderer, gTowers[i]->GetRect());
-      SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
-
       gTowers[i]->SetTarget(towerTargetX, towerTargetY);
       gTowers[i]->Shoot(&tBallBlue, gProjectiles, dt);
       gTowers[i]->Render(gRenderer, dt);
@@ -479,9 +492,6 @@ int main() {
 
     // render ui
     vlGroup.Render(gRenderer);
-
-    // debug drawing
-    // DrawPath(gRenderer, map0Path, MAP_0_PATH_LENGTH);
 
     SDL_RenderPresent(gRenderer);
 

@@ -1,7 +1,7 @@
 ## Todo
 
 - [ ] Damage/health system
-    - [ ] Enemy/tower healthbars
+    - [x] Enemy/tower healthbars
 - [ ] Enemy colors
 - [ ] Music
 - [x] Click to set target
