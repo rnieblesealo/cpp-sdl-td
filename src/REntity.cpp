@@ -3,6 +3,7 @@
 #include <SDL_mixer.h>
 #include <SDL_render.h>
 #include <SDL_stdinc.h>
+#include <time.h>
 
 const double PI = 3.14159265358979323846;
 
@@ -126,7 +127,7 @@ void REntity::SetPath(SDL_Point *path, int pathLength) {
 
 void REntity::SetSpeed(int speed) { this->speed = speed; }
 
-void REntity::Damage(int amt) {
+void REntity::TakeDamage(int amt) {
   if (health - amt < 0) {
     health = 0;
   }

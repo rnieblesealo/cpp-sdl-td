@@ -13,6 +13,7 @@
 #include <SDL_stdinc.h>
 #include <SDL_ttf.h>
 #include <SDL_video.h>
+#include <algorithm>
 #include <chrono>
 
 const int TILE_WIDTH = 128;
@@ -44,6 +45,7 @@ float dt = 0;
 
 // sfx/sound
 Mix_Chunk *sfxShootEnemy;
+Mix_Chunk *sfxHitEnemy;
 Mix_Chunk *sfxShootTower;
 
 // map
@@ -56,6 +58,12 @@ void SetPoint(SDL_Point *path, int i, int x, int y) {
   path[i].x = x;
   path[i].y = y;
 }
+
+// projectiles
+// TODO: we are modcoloring the same texture, implement correctly
+RTexture tBallRed;
+RTexture tBallBlue;
+std::vector<RProjectile *> gProjectiles;
 
 // enemies
 RTexture tEnemy;
@@ -70,10 +78,57 @@ SDL_Rect cEnemyWeapon[] = {{0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128},
 RSprite sEnemy(&tEnemy, cEnemy, 1);
 RSprite sEnemyWeapon(&tEnemyWeapon, cEnemyWeapon, 8);
 
-std::vector<REntity *> gEnemies;
+std::vector<REntity *> gEntities;
 
 int enemyTargetX = 0;
 int enemyTargetY = 0;
+
+void CheckProjectileCollisions(REntity *enemy) {
+  REntity *self = enemy;
+  std::vector<REntity *> &parentList = gEntities;
+
+  // check for projectile collisions
+  for (int i = 0; i < gProjectiles.size(); ++i) {
+    RProjectile *projectile = gProjectiles[i];
+    REntity *projectileIssuer = projectile->GetIssuer();
+
+    auto issuerIndex =
+        std::find(parentList.begin(), parentList.end(), projectileIssuer);
+
+    // if the issuer is another entity in the list this entity is in, it's
+    // friendly fire
+    bool issuerInParentList = (issuerIndex != gEntities.end());
+
+    if (projectileIssuer == NULL || projectileIssuer == self ||
+        issuerInParentList) {
+      continue;
+    }
+
+    int projectileX = projectile->GetPosX();
+    int projectileY = projectile->GetPosY();
+
+    // check if projectile pos is inside rect
+    if (REntity::CheckCollision(self->GetRect(), projectileX, projectileY)) {
+      self->TakeDamage(projectileIssuer->GetProjectileDamage());
+
+      // TESTING
+      // play enemy damage sound
+      Mix_PlayChannel(-1, sfxHitEnemy, 0);
+
+      // if health reaches zero, die
+      if (self->GetHealth() == 0) {
+
+        // remove enemy from parent vector by value rather than index
+        parentList.erase(
+            std::remove(parentList.begin(), parentList.end(), self),
+            parentList.end());
+      }
+
+      // erase colliding projectile
+      gProjectiles.erase(gProjectiles.begin() + i);
+    }
+  }
+}
 
 void SpawnEnemy() {
   REntity *newEnemy = new REntity(&sEnemy, &sEnemyWeapon, sfxShootEnemy);
@@ -82,8 +137,11 @@ void SpawnEnemy() {
   newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
   newEnemy->SetPos(map0Path[0].x, map0Path[0].y);
 
+  // TESTING
+  newEnemy->SetFireRate(16);
+
   // add enemy to reg
-  gEnemies.push_back(newEnemy);
+  gEntities.push_back(newEnemy);
 }
 
 // towers
@@ -108,7 +166,6 @@ int towerTargetY = 0;
 void SpawnTower(int gridX, int gridY) {
   if (gridX > LEVEL_GRID_WIDTH || gridX < 0 || gridY > LEVEL_GRID_HEIGHT ||
       gridY < 0) {
-    printf("Invalid tower spawnpos\n");
     return;
   }
 
@@ -125,14 +182,12 @@ void SpawnTower(int gridX, int gridY) {
   // add a small, random offset to the shoot timer
   newTower->AddToShootTimer((rand() % 100) / (float)100);
 
+
+  newTower->SetFireRate(12);
+  newTower->SetProjectileSpeed(14);
+  
   gTowers.push_back(newTower);
 }
-
-// projectiles
-// TODO: we are modcoloring the same texture, implement correctly
-RTexture tBallRed;
-RTexture tBallBlue;
-std::vector<RProjectile *> gProjectiles;
 
 // event handling
 int mouseX = 0;
@@ -304,6 +359,12 @@ bool LoadMedia() {
     success = false;
   }
 
+  sfxHitEnemy = Mix_LoadWAV("../assets/hit.wav");
+  if (!sfxHitEnemy){
+    PrintError(); 
+    success = false;
+  }
+
   sfxShootTower = Mix_LoadWAV("../assets/shoot1.wav");
   if (!sfxShootEnemy) {
     PrintError();
@@ -414,11 +475,11 @@ int main() {
     }
 
     // clear enemies that have cleared the path
-    for (int i = 0; i < gEnemies.size(); ++i) {
-      REntity *enemy = gEnemies[i];
+    for (int i = 0; i < gEntities.size(); ++i) {
+      REntity *enemy = gEntities[i];
 
       if (enemy->IsAtEndOfPath()) {
-        gEnemies.erase(gEnemies.begin() + i);
+        gEntities.erase(gEntities.begin() + i);
       }
     }
 
@@ -428,50 +489,30 @@ int main() {
     // render map
     tMap0.Render(gRenderer, 0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
 
+    // upd projectiles
+    for (int i = 0; i < gProjectiles.size(); ++i) {
+      RProjectile *projectile = gProjectiles[i];
+
+      projectile->Move();
+      projectile->Render(gRenderer);
+    }
+
     // upd enemies
-    for (int i = 0; i < gEnemies.size(); ++i) {
-      SDL_Rect *rect = gEnemies[i]->GetRect();
+    for (int i = 0; i < gEntities.size(); ++i) {
+      REntity *enemy = gEntities[i];
 
-      // check for projectile collisions
-      for (int j = 0; j < gProjectiles.size(); ++j) {
-        // don't check own projectiles
-        if (gProjectiles[j]->GetIssuer() == gEnemies[i]) {
-          continue;
-        }
+      CheckProjectileCollisions(enemy);
 
-        int projectileX = gProjectiles[j]->GetPosX();
-        int projectileY = gProjectiles[j]->GetPosY();
-
-        // if tower projectile hit enemy...
-        if (REntity::CheckCollision(rect, projectileX, projectileY)) {
-          REntity *projectileIssuer = gProjectiles[j]->GetIssuer();
-
-          // need issuer information to apply things like damage
-          if (projectileIssuer != NULL) {
-            // damage enemy
-            gEnemies[i]->Damage(projectileIssuer->GetProjectileDamage());
-            
-            // if health reaches zero, kill enemy
-            if (gEnemies[i]->GetHealth() == 0){
-              gEnemies.erase(gEnemies.begin() + i);
-            }
-          }
-
-          // erase projectile
-          gProjectiles.erase(gProjectiles.begin() + j);
-        }
-      }
-
-      gEnemies[i]->MoveAlongPath();
-      gEnemies[i]->SetTarget(enemyTargetX, enemyTargetY);
-      gEnemies[i]->Shoot(&tBallRed, gProjectiles, dt);
-      gEnemies[i]->Render(gRenderer, dt);
+      enemy->MoveAlongPath();
+      enemy->SetTarget(enemyTargetX, enemyTargetY);
+      enemy->Shoot(&tBallRed, gProjectiles, dt);
+      enemy->Render(gRenderer, dt);
     }
 
     // make towers shoot at first enemy
-    if (gEnemies.size() > 0) {
-      towerTargetX = gEnemies[0]->GetPosX();
-      towerTargetY = gEnemies[0]->GetPosY();
+    if (gEntities.size() > 0) {
+      towerTargetX = gEntities[0]->GetPosX();
+      towerTargetY = gEntities[0]->GetPosY();
     }
 
     // render crosshair
@@ -479,15 +520,11 @@ int main() {
 
     // upd tower
     for (int i = 0; i < gTowers.size(); ++i) {
-      gTowers[i]->SetTarget(towerTargetX, towerTargetY);
-      gTowers[i]->Shoot(&tBallBlue, gProjectiles, dt);
-      gTowers[i]->Render(gRenderer, dt);
-    }
+      REntity *tower = gTowers[i];
 
-    // upd projectiles
-    for (int i = 0; i < gProjectiles.size(); ++i) {
-      gProjectiles[i]->Move();
-      gProjectiles[i]->Render(gRenderer);
+      tower->SetTarget(towerTargetX, towerTargetY);
+      tower->Shoot(&tBallBlue, gProjectiles, dt);
+      tower->Render(gRenderer, dt);
     }
 
     // render ui

@@ -59,7 +59,7 @@ public:
   void SetPath(SDL_Point *path, int pathLength);
   void SetSpeed(int speed);
 
-  void Damage(int amt);
+  void TakeDamage(int amt);
   void Heal(int amt);
 
   void Move();
