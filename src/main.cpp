@@ -15,6 +15,7 @@
 #include <SDL_video.h>
 #include <algorithm>
 #include <chrono>
+#include <string>
 
 const int TILE_WIDTH = 128;
 const int TILE_HEIGHT = 128;
@@ -30,7 +31,7 @@ const int GUI_WIDTH = 128 * 3;
 const int SCREEN_WIDTH = LEVEL_WIDTH + GUI_WIDTH;
 const int SCREEN_HEIGHT = LEVEL_HEIGHT;
 
-const int FONT_SIZE = 24;
+const int FONT_SIZE = 12;
 
 // sdl/general
 SDL_Window *gWindow = NULL;
@@ -131,14 +132,14 @@ void CheckProjectileCollisions(REntity *enemy) {
 }
 
 void SpawnEnemy() {
-  REntity *newEnemy = new REntity(&sEnemy, &sEnemyWeapon, sfxShootEnemy);
+  REntity *newEnemy = new REntity(TANK, &sEnemy, &sEnemyWeapon, sfxShootEnemy);
 
   // make enemy follow path
   newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
   newEnemy->SetPos(map0Path[0].x, map0Path[0].y);
 
   // TESTING
-  newEnemy->SetFireRate(16);
+  newEnemy->SetFireRate(3);
 
   // add enemy to reg
   gEntities.push_back(newEnemy);
@@ -174,7 +175,8 @@ void SpawnTower(int gridX, int gridY) {
   gridX = gridX * TILE_WIDTH + TILE_WIDTH / 2;
   gridY = gridY * TILE_HEIGHT + TILE_HEIGHT / 2;
 
-  REntity *newTower = new REntity(&sTowerBase, &sTowerWeapon, sfxShootTower);
+  REntity *newTower =
+      new REntity(TOWER, &sTowerBase, &sTowerWeapon, sfxShootTower);
 
   // spawn tower in coords relative to grid
   newTower->SetPos(gridX, gridY);
@@ -182,10 +184,9 @@ void SpawnTower(int gridX, int gridY) {
   // add a small, random offset to the shoot timer
   newTower->AddToShootTimer((rand() % 100) / (float)100);
 
-
-  newTower->SetFireRate(12);
+  newTower->SetFireRate(3);
   newTower->SetProjectileSpeed(14);
-  
+
   gTowers.push_back(newTower);
 }
 
@@ -195,11 +196,19 @@ int mouseY = 0;
 
 // gui
 RTexture tCrosshair;
+RTexture tHeart;
+RTexture tDefenderHealth;
 
 RGraphic graphicA;
 RButton buttonA(&graphicA, &SpawnEnemy);
 
 RVerticalLayoutGroup vlGroup;
+
+// global game
+int defenderMaxHealth = 100;
+int defenderHealth = defenderMaxHealth;
+
+std::string defenderHealthText;
 
 void PrintError() { printf("%s\n", SDL_GetError()); }
 
@@ -270,7 +279,7 @@ bool Init() {
 bool LoadMedia() {
   bool success = true;
 
-  gFont = TTF_OpenFont("../assets/font.ttf", FONT_SIZE);
+  gFont = TTF_OpenFont("../assets/better-font.ttf", FONT_SIZE);
   if (gFont == NULL) {
     PrintError();
     success = false;
@@ -353,6 +362,16 @@ bool LoadMedia() {
 
   tCrosshair.SetScale(7);
 
+  // set bogus modcolor bc we use both white and red
+  // TODO add an option for this?
+  if (!tHeart.LoadFromFile(gRenderer, "../assets/heart.png", 1, 1, 1)) {
+    PrintError();
+    success = false;
+  }
+
+  tHeart.SetScale(14);
+  tHeart.ModColor(255, 0, 0);
+
   sfxShootEnemy = Mix_LoadWAV("../assets/shoot.wav");
   if (!sfxShootEnemy) {
     PrintError();
@@ -360,8 +379,8 @@ bool LoadMedia() {
   }
 
   sfxHitEnemy = Mix_LoadWAV("../assets/hit.wav");
-  if (!sfxHitEnemy){
-    PrintError(); 
+  if (!sfxHitEnemy) {
+    PrintError();
     success = false;
   }
 
@@ -370,6 +389,11 @@ bool LoadMedia() {
     PrintError();
     success = false;
   }
+
+  // load initial health text
+  defenderHealthText = std::to_string(defenderHealth);
+  tDefenderHealth.LoadFromRenderedText(
+      gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
 
   return success;
 }
@@ -479,6 +503,15 @@ int main() {
       REntity *enemy = gEntities[i];
 
       if (enemy->IsAtEndOfPath()) {
+        // enemies that clear the path also do damage to defender
+        // keep it at units so its easier :)
+        defenderHealth--;
+
+        // update the text
+        defenderHealthText = std::to_string(defenderHealth);
+        tDefenderHealth.LoadFromRenderedText(
+            gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
+
         gEntities.erase(gEntities.begin() + i);
       }
     }
@@ -528,7 +561,28 @@ int main() {
     }
 
     // render ui
+    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
+
+    SDL_Rect uiBg;
+
+    uiBg.x = 0;
+    uiBg.y = 0;
+    uiBg.w = SCREEN_WIDTH;
+    uiBg.h = 128 + 20;
+
+    SDL_RenderFillRect(gRenderer, &uiBg);
+
     vlGroup.Render(gRenderer);
+
+    int heartPosX = 15;
+    int heartPosY = 15;
+
+    int tDefHealthW = 128 * 2;
+    int tDefHealthH = 128;
+
+    tHeart.Render(gRenderer, heartPosX, heartPosY, NULL);
+    tDefenderHealth.Render(gRenderer, heartPosX + tHeart.GetWidth() + 10,
+                           heartPosY, tDefHealthW, tDefHealthH);
 
     SDL_RenderPresent(gRenderer);
 

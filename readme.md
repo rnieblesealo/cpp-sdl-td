@@ -2,16 +2,20 @@
 
 - [ ] Damage/health system
     - [x] Enemy/tower healthbars
+    - [x] Tower/defender health
 - [ ] Enemy colors
+    - This is *kinda* done; there's the enum; now we need to use it
 - [ ] Music
 - [x] Click to set target
     - [ ] Snap to clicked enemy
 - [x] Towers!
+- [ ] Make all assets match 128x128 so that we don't have to do resizing
+- [ ] Make the UI not god awful
 
 ## Notes
 
 ### General/Uncategorized
-- Sprite postiions are relative to their center; everything else's position isn't
+- Sprite postions are relative to their center; everything else's position isn't
 - If we get random segfault, check NULL assignments for R classes
 
 ### Idea 

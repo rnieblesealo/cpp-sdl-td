@@ -43,8 +43,10 @@ void RProjectile::Render(SDL_Renderer *renderer) {
   texture->Render(renderer, posX, posY, NULL, true);
 }
 
-REntity::REntity(RSprite *bodySprite, RSprite *weaponSprite,
+REntity::REntity(EntityKind kind, RSprite *bodySprite, RSprite *weaponSprite,
                  Mix_Chunk *shootSound) {
+  this->kind = kind;
+
   this->bodySprite = bodySprite;
   this->weaponSprite = weaponSprite;
   this->shootSound = shootSound;
@@ -291,6 +293,35 @@ void REntity::Render(SDL_Renderer *renderer, float dt) {
 }
 
 void REntity::RenderHealthBar(SDL_Renderer *renderer) {
+  SDL_Color frameColor;
+
+  frameColor.r = 18;
+  frameColor.g = 18;
+  frameColor.b = 18;
+  frameColor.a = 255;
+
+  SDL_Color fillColor;
+
+  fillColor.a = 255;
+  
+  switch (kind) {
+  case TANK:
+    fillColor.r = 255;
+    fillColor.g = 0;
+    fillColor.b = 0;
+    break;
+  case TOWER:
+    fillColor.r = 0;
+    fillColor.g = 0;
+    fillColor.b = 255;
+    break;
+  default:
+    fillColor.r = 255;
+    fillColor.g = 255;
+    fillColor.b = 255;
+    break;
+  }
+
   int barPad = 3;
   int yCenterOffset = (float)bodySprite->GetHeight() / 2 - 15;
 
@@ -311,11 +342,13 @@ void REntity::RenderHealthBar(SDL_Renderer *renderer) {
   bar.w = currBarWidth;
   bar.h = frame.h - 2 * barPad;
 
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  SDL_SetRenderDrawColor(renderer, frameColor.r, frameColor.g, frameColor.b,
+                         frameColor.a);
 
   SDL_RenderFillRect(renderer, &frame);
 
-  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+  SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b,
+                         fillColor.a);
 
   SDL_RenderFillRect(renderer, &bar);
 

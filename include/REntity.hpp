@@ -8,6 +8,11 @@
 #include <SDL_render.h>
 #include <vector>
 
+typedef enum EntityKind{
+  TANK,
+  TOWER
+} EntityKind;
+
 // you can do this ???
 class REntity;
 
@@ -36,7 +41,7 @@ private:
 
 class REntity {
 public:
-  REntity(RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound);
+  REntity(EntityKind kind, RSprite *bodySprite, RSprite *weaponSprite, Mix_Chunk *shootSound);
 
   bool IsAtEndOfPath();
 
@@ -101,6 +106,9 @@ private:
   // health stuff
   int maxHealth;
   int health;
+
+  // identifier
+  EntityKind kind;
 };
 
 #endif
