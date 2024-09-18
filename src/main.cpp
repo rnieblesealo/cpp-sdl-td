@@ -33,25 +33,58 @@ const int SCREEN_HEIGHT = LEVEL_HEIGHT;
 
 const int FONT_SIZE = 8;
 
-// sdl/general
+// SDL
+
 SDL_Window *gWindow = NULL;
 SDL_Surface *gWindowSurface = NULL;
 SDL_Renderer *gRenderer = NULL;
 TTF_Font *gFont = NULL;
 
-auto lastUpdateTime = std::chrono::high_resolution_clock::now();
+void PrintError() { printf("%s\n", SDL_GetError()); }
 
+// Game Time
+
+auto lastUpdateTime = std::chrono::high_resolution_clock::now();
 float targetFps = 120;
 float dt = 0;
 
-// sfx/sound
+// Event Handling
+
+int mouseX = 0;
+int mouseY = 0;
+
+bool leftClick = false;
+
+// GUI
+
+RTexture tHeart;
+RTexture tDefenderHealth;
+RTexture tCrosshair;
+
+RGraphic graphicA;
+RButton buttonA(&graphicA, NULL);
+
+RVerticalLayoutGroup vlGroup;
+
+std::string defenderHealthText;
+
+// Music
+
 Mix_Music *songChiaroscuro;
+
+// SFX
 
 Mix_Chunk *sfxShootEnemy;
 Mix_Chunk *sfxHitEnemy;
 Mix_Chunk *sfxShootTower;
 
-// map
+// Gameplay
+
+int defenderMaxHealth = 100;
+int defenderHealth = defenderMaxHealth;
+
+// Maps
+
 RTexture tMap0;
 const int MAP_0_PATH_LENGTH = 13;
 SDL_Point map0Path[MAP_0_PATH_LENGTH];
@@ -62,29 +95,14 @@ void SetPoint(SDL_Point *path, int i, int x, int y) {
   path[i].y = y;
 }
 
-// projectiles
-// TODO: we are modcoloring the same texture, implement correctly
-RTexture tBallRed;
-RTexture tBallBlue;
+// Projectiles
+
 std::vector<RProjectile *> gProjectiles;
 
-// enemies
-RTexture tEnemy;
-RTexture tEnemyWeapon;
+RTexture tBallRed;
+RTexture tBallBlue;
 
-SDL_Rect cEnemy[] = {{0, 0, 128, 128}};
-SDL_Rect cEnemyWeapon[] = {{0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128},
-                           {2 * 128, 0, 128, 128}, {3 * 128, 0, 128, 128},
-                           {4 * 128, 0, 128, 128}, {5 * 128, 0, 128, 128},
-                           {6 * 128, 0, 128, 128}, {7 * 128, 0, 128, 128}};
-
-RSprite sEnemy(&tEnemy, cEnemy, 1);
-RSprite sEnemyWeapon(&tEnemyWeapon, cEnemyWeapon, 8);
-
-std::vector<REntity *> gEnemies;
-
-int enemyTargetX = 0;
-int enemyTargetY = 0;
+// Entities
 
 void CheckProjectileCollisions(REntity *enemy,
                                std::vector<REntity *> &parentList) {
@@ -133,6 +151,25 @@ void CheckProjectileCollisions(REntity *enemy,
   }
 }
 
+// Enemies
+
+std::vector<REntity *> gEnemies;
+
+int enemyTargetX = 0;
+int enemyTargetY = 0;
+
+RTexture tEnemy;
+RTexture tEnemyWeapon;
+
+SDL_Rect cEnemy[] = {{0, 0, 128, 128}};
+SDL_Rect cEnemyWeapon[] = {{0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128},
+                           {2 * 128, 0, 128, 128}, {3 * 128, 0, 128, 128},
+                           {4 * 128, 0, 128, 128}, {5 * 128, 0, 128, 128},
+                           {6 * 128, 0, 128, 128}, {7 * 128, 0, 128, 128}};
+
+RSprite sEnemy(&tEnemy, cEnemy, 1);
+RSprite sEnemyWeapon(&tEnemyWeapon, cEnemyWeapon, 8);
+
 void SpawnEnemy() {
   REntity *newEnemy = new REntity(TANK, &sEnemy, &sEnemyWeapon, sfxShootEnemy);
 
@@ -147,7 +184,13 @@ void SpawnEnemy() {
   gEnemies.push_back(newEnemy);
 }
 
-// towers
+// Towers
+
+std::vector<REntity *> gTowers;
+
+int towerTargetX = 0;
+int towerTargetY = 0;
+
 RTexture tTowerBase;
 RTexture tTowerWeapon;
 
@@ -160,11 +203,6 @@ SDL_Rect cTowerWeapon[] = {
 
 RSprite sTowerBase(&tTowerBase, cTowerBase, 1);
 RSprite sTowerWeapon(&tTowerWeapon, cTowerWeapon, 11);
-
-std::vector<REntity *> gTowers;
-
-int towerTargetX = 0;
-int towerTargetY = 0;
 
 void SpawnTower(int gridX, int gridY) {
   if (gridX > LEVEL_GRID_WIDTH || gridX < 0 || gridY > LEVEL_GRID_HEIGHT ||
@@ -192,29 +230,7 @@ void SpawnTower(int gridX, int gridY) {
   gTowers.push_back(newTower);
 }
 
-// event handling
-int mouseX = 0;
-int mouseY = 0;
-
-// gui
-bool leftClick = false;
-
-RTexture tCrosshair;
-RTexture tHeart;
-RTexture tDefenderHealth;
-
-RGraphic graphicA;
-RButton buttonA(&graphicA, &SpawnEnemy);
-
-RVerticalLayoutGroup vlGroup;
-
-// global game
-int defenderMaxHealth = 100;
-int defenderHealth = defenderMaxHealth;
-
-std::string defenderHealthText;
-
-void PrintError() { printf("%s\n", SDL_GetError()); }
+// Debugging
 
 void DrawPath(SDL_Renderer *renderer, SDL_Point *path, int pathLength) {
   // draw path nodes to ensure they're ok
@@ -233,6 +249,8 @@ void DrawPath(SDL_Renderer *renderer, SDL_Point *path, int pathLength) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 }
 
+// Initialization
+
 bool Init() {
   bool success = true;
 
@@ -241,59 +259,65 @@ bool Init() {
     success = false;
   }
 
+  // make window
   gWindow = SDL_CreateWindow("Dower Tefense", SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH,
                              SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-
   if (!gWindow) {
     PrintError();
     success = false;
   }
 
+  // make renderer
   gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
-
   if (gRenderer == NULL) {
     PrintError();
     success = false;
   }
 
+  // store window surface for drawing
   gWindowSurface = SDL_GetWindowSurface(gWindow);
 
+  // start image loader
   int imageFlags = IMG_INIT_PNG;
   if (!(IMG_Init(imageFlags) & imageFlags)) {
     PrintError();
     success = false;
   }
 
+  // start font loader
   if (TTF_Init() == -1) {
     PrintError();
     success = false;
   }
 
+  // start mixer w/2 channels
+  // 0: sfx
+  // 1: music
   if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
     PrintError();
     success = false;
   }
 
+  // make sfx half as loud as music (trust me, your ears will love it)
+  Mix_Volume(0, 32);
+  Mix_Volume(1, MIX_MAX_VOLUME);
+
+  // put mouse at window center
+  SDL_WarpMouseInWindow(gWindow, LEVEL_WIDTH / 2, LEVEL_HEIGHT / 2);
+
+  // because we need to poll the event handler to get new mouse position, set
+  // the target to center manually
+  enemyTargetX = LEVEL_WIDTH / 2;
+  enemyTargetY = LEVEL_HEIGHT / 2;
+
   return success;
 }
 
-bool LoadMedia() {
-  bool success = true;
-
-  gFont = TTF_OpenFont("../assets/better-font.ttf", FONT_SIZE);
-  if (gFont == NULL) {
-    PrintError();
-    success = false;
-  }
-
-  if (!tMap0.LoadFromFile(gRenderer, "../assets/map0.png")) {
-    PrintError();
-    success = false;
-  }
-
-  // set map points, in unscaled coords (e.g. 10, 7 refers to 10 tiles x, 7
+void MakeMapPaths() {
+  // first set map points in unscaled coords (e.g. 10, 7 refers to 10 tiles x, 7
   // tiles y)
+  // first int is the index of the point, second is the coords
   SetPoint(map0Path, 0, 0, 5);
   SetPoint(map0Path, 1, 8, 5);
   SetPoint(map0Path, 2, 8, 2);
@@ -309,14 +333,62 @@ bool LoadMedia() {
   SetPoint(map0Path, 12, 8, 12);
 
   for (int i = 0; i < MAP_0_PATH_LENGTH; ++i) {
-    // scale up point coords to match screen coords
+    // scale up points to match level screen cords
     map0Path[i].x *= TILE_WIDTH;
     map0Path[i].y *= TILE_HEIGHT;
 
-    // center over tile size
+    // also make a tile's posistion its center; it's easier to deal with
+    // positioning entities this way
     map0Path[i].x -= (int)SDL_roundf((float)TILE_WIDTH / 2);
     map0Path[i].y -= (int)SDL_roundf((float)TILE_HEIGHT / 2);
   }
+}
+
+void ConfigureGUI() {
+  // Graphic Colors
+
+  graphicA.SetAreaColor(40, 40, 40);
+
+  // Button Actions
+
+  buttonA.SetAction(&SpawnEnemy);
+
+  // Layout Group
+  // 1. Add elements
+  // 2. Position & pad
+  // 3. Apply (readies it for drawing)
+
+  vlGroup.AddElement(&graphicA);
+
+  vlGroup.SetArea(LEVEL_WIDTH, tHeart.GetHeight(), GUI_WIDTH,
+                  SCREEN_HEIGHT - tHeart.GetHeight());
+  vlGroup.SetPadding(40, 40);
+
+  vlGroup.Apply();
+}
+
+bool LoadMedia() {
+  // WARNING: all filepaths are wrong for now lmao
+  // just refactoring order in order to make things easier
+
+  bool success = true;
+
+  // Fonts
+
+  gFont = TTF_OpenFont("../assets/better-font.ttf", FONT_SIZE);
+  if (gFont == NULL) {
+    PrintError();
+    success = false;
+  }
+
+  // Maps
+
+  if (!tMap0.LoadFromFile(gRenderer, "../assets/map0.png")) {
+    PrintError();
+    success = false;
+  }
+
+  // Projectiles
 
   if (!tBallRed.LoadFromFile(gRenderer, "../assets/ball.png")) {
     PrintError();
@@ -334,6 +406,8 @@ bool LoadMedia() {
   tBallBlue.ModColor(0, 0, 255);
   tBallBlue.SetScale(4);
 
+  // Towers
+
   if (!tTowerBase.LoadFromFile(gRenderer, "../assets/b-tower-base.png", 255,
                                255, 255)) {
     PrintError();
@@ -344,6 +418,8 @@ bool LoadMedia() {
     PrintError();
     success = false;
   }
+
+  // Enemies
 
   if (!tEnemy.LoadFromFile(gRenderer, "../assets/r-tank-body.png", 255, 255,
                            255)) {
@@ -357,6 +433,8 @@ bool LoadMedia() {
     success = false;
   }
 
+  // GUI
+
   if (!tCrosshair.LoadFromFile(gRenderer, "../assets/crosshair.png")) {
     PrintError();
     success = false;
@@ -364,8 +442,9 @@ bool LoadMedia() {
 
   tCrosshair.SetScale(7);
 
-  // set bogus modcolor bc we use both white and red
-  // TODO add an option for this?
+  // TODO make the default arg for colorkey not do a colorkey in the first place
+  // set bogus modcolor for now bc we use both white and red in the heart's
+  // actual sprite
   if (!tHeart.LoadFromFile(gRenderer, "../assets/heart.png", 1, 1, 1)) {
     PrintError();
     success = false;
@@ -374,11 +453,19 @@ bool LoadMedia() {
   tHeart.SetScale(12);
   tHeart.ModColor(255, 0, 0);
 
+  defenderHealthText = std::to_string(defenderHealth);
+  tDefenderHealth.LoadFromRenderedText(
+      gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
+
+  // Music
+
   songChiaroscuro = Mix_LoadMUS("../assets/chiaroscuro.wav");
   if (!songChiaroscuro) {
     PrintError();
     success = false;
   }
+
+  // SFX
 
   sfxShootEnemy = Mix_LoadWAV("../assets/shoot.wav");
   if (!sfxShootEnemy) {
@@ -398,15 +485,13 @@ bool LoadMedia() {
     success = false;
   }
 
-  // load initial health text
-  defenderHealthText = std::to_string(defenderHealth);
-  tDefenderHealth.LoadFromRenderedText(
-      gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
-
   return success;
 }
 
 void Close() {
+  // TODO finish this!
+  // there is a lot we aren't freeing
+
   tMap0.Free();
   tEnemy.Free();
   tEnemyWeapon.Free();
@@ -425,7 +510,116 @@ void Close() {
   SDL_Quit();
 }
 
+// Game Flow
+
+// WARNING: what happens if projectile/enemy is popped from the middle?
+// forloop might be dangerous
+
+void ClearOffBoundsProjectiles() {
+  for (int i = 0; i < gProjectiles.size(); ++i) {
+    RProjectile *projectile = gProjectiles[i];
+    if (projectile->GetPosX() < 0 || projectile->GetPosX() > LEVEL_WIDTH ||
+        projectile->GetPosY() < 0 || projectile->GetPosY() > LEVEL_HEIGHT) {
+
+      // remove ith element; vector erases this for us
+      gProjectiles.erase(gProjectiles.begin() + i);
+    }
+  }
+}
+
+void ClearFinishedEnemies() {
+  // clear enemies that have cleared the path
+  for (int i = 0; i < gEnemies.size(); ++i) {
+    REntity *enemy = gEnemies[i];
+
+    if (enemy->IsAtEndOfPath()) {
+      // enemies that clear the path also do damage to defender
+      // keep it at units so its easier :)
+      defenderHealth--;
+
+      // update the text
+      defenderHealthText = std::to_string(defenderHealth);
+      tDefenderHealth.LoadFromRenderedText(
+          gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
+
+      gEnemies.erase(gEnemies.begin() + i);
+    }
+  }
+}
+
+void UpdateProjectiles() {
+  // upd projectiles
+  for (int i = 0; i < gProjectiles.size(); ++i) {
+    RProjectile *projectile = gProjectiles[i];
+
+    projectile->Move();
+    projectile->Render(gRenderer);
+  }
+}
+
+void UpdateEnemies() {
+  for (int i = 0; i < gEnemies.size(); ++i) {
+    REntity *enemy = gEnemies[i];
+
+    CheckProjectileCollisions(enemy, gEnemies);
+
+    enemy->MoveAlongPath();
+    enemy->SetTarget(enemyTargetX, enemyTargetY);
+    enemy->Shoot(&tBallRed, gProjectiles, dt);
+    enemy->Render(gRenderer, dt);
+  }
+}
+
+void UpdateTowers() {
+  for (int i = 0; i < gTowers.size(); ++i) {
+    REntity *tower = gTowers[i];
+
+    CheckProjectileCollisions(tower, gTowers);
+
+    // target first enemy always if in range and there is one
+    // TODO proper targeting system
+
+    REntity *targetEnemy;
+
+    if (gEnemies.size() > 0) {
+      targetEnemy = gEnemies[0];
+
+      float towerRange = 500;
+      float targetDistance =
+          REntity::Distance(targetEnemy->GetPosX(), targetEnemy->GetPosY(),
+                            tower->GetPosX(), tower->GetPosY());
+
+      // printf("%f\n", targetDistance);
+
+      if (targetDistance < towerRange) {
+        tower->SetTarget(targetEnemy->GetPosX(), targetEnemy->GetPosY());
+        tower->Shoot(&tBallBlue, gProjectiles, dt);
+      }
+    }
+
+    tower->Render(gRenderer, dt);
+  }
+}
+
+void DrawUI() {
+  // pos calculations are a mess and were eyeballed
+  // TODO improve that
+  vlGroup.Render(gRenderer);
+
+  int heartPosX = LEVEL_WIDTH + 30;
+  int heartPosY = 20;
+
+  int tDefHealthW = 100 * 2;
+  int tDefHealthH = 100;
+
+  tHeart.Render(gRenderer, heartPosX, heartPosY, NULL);
+  tDefenderHealth.Render(gRenderer, heartPosX + tHeart.GetWidth() + 15,
+                         heartPosY - 12, tDefHealthW, tDefHealthH);
+}
+
 int main() {
+  // Initialization
+
   if (!Init()) {
     return 1;
   }
@@ -434,45 +628,21 @@ int main() {
     return 1;
   }
 
-  // setup button graphics
-  graphicA.SetAreaColor(40, 40, 40);
-
-  // setup button
-
-  // setup layout group
-  vlGroup.AddElement(&graphicA);
-
-  vlGroup.SetArea(LEVEL_WIDTH, tHeart.GetHeight(), GUI_WIDTH,
-                  SCREEN_HEIGHT - tHeart.GetHeight());
-  vlGroup.SetPadding(40, 40);
-  vlGroup.Apply();
-
-  // TESTING
-  // spawn towers
+  // seed the randomizer
   srand(time(NULL));
 
-  int nTowers = 12;
+  MakeMapPaths();
+  ConfigureGUI();
 
+  // TODO remove; spawn some towers for testing
+  int nTowers = 4;
   for (int i = 0; i < nTowers; ++i) {
     SpawnTower(rand() % LEVEL_GRID_WIDTH, rand() % LEVEL_GRID_HEIGHT);
   }
 
-  // put mouse at center
-  SDL_WarpMouseInWindow(gWindow, LEVEL_WIDTH / 2, LEVEL_HEIGHT / 2);
-
-  // TESTING
-  // adjust channel volume, 0 is for sfx 1 is for music
-  // MIX_MAX_VOLUME is 128
-  Mix_Volume(0, 32);
-  Mix_Volume(1, MIX_MAX_VOLUME);
-
-  // play music
   Mix_PlayMusic(songChiaroscuro, 1);
 
-  // getting mousestate before running eventloop doesn't give back new position
-  // set enemy target alongside cursor position manually!
-  enemyTargetX = LEVEL_WIDTH / 2;
-  enemyTargetY = LEVEL_HEIGHT / 2;
+  // Main Loop
 
   SDL_Event e;
 
@@ -493,6 +663,8 @@ int main() {
       // always get mouse position
       SDL_GetMouseState(&mouseX, &mouseY);
 
+      // Quit Commands
+
       if (e.type == SDL_QUIT) {
         quit = true;
       }
@@ -503,7 +675,8 @@ int main() {
         }
       }
 
-      // set target mouse coords; will be changed
+      // Left Click State
+
       else if (e.type == SDL_MOUSEBUTTONDOWN) {
         if (e.button.button == SDL_BUTTON_LEFT) {
           leftClick = true;
@@ -516,125 +689,49 @@ int main() {
         }
       }
 
+      // Individual Event Handling
+
       buttonA.HandleEvent(&e);
     }
 
     // move target if holding left click somewhere within the level
-    bool clickedWithinLevel = mouseX > 0 && mouseX <= LEVEL_WIDTH &&
-                              mouseY > 0 && mouseY <= LEVEL_HEIGHT;
+    bool mouseWithinLevel = mouseX > 0 && mouseX <= LEVEL_WIDTH && mouseY > 0 &&
+                            mouseY <= LEVEL_HEIGHT;
 
-    if (leftClick && clickedWithinLevel) {
+    if (leftClick && mouseWithinLevel) {
       enemyTargetX = mouseX;
       enemyTargetY = mouseY;
     }
 
-    // WARNING: what happens if projectile/enemy is popped from the middle?
-    // forloop might be dangerous
+    ClearOffBoundsProjectiles();
+    ClearFinishedEnemies();
 
-    // clear offbounds projectiles
-    for (int i = 0; i < gProjectiles.size(); ++i) {
-      RProjectile *projectile = gProjectiles[i];
-      if (projectile->GetPosX() < 0 || projectile->GetPosX() > LEVEL_WIDTH ||
-          projectile->GetPosY() < 0 || projectile->GetPosY() > LEVEL_HEIGHT) {
-
-        // remove ith element; vector erases this for us
-        gProjectiles.erase(gProjectiles.begin() + i);
-      }
-    }
-
-    // clear enemies that have cleared the path
-    for (int i = 0; i < gEnemies.size(); ++i) {
-      REntity *enemy = gEnemies[i];
-
-      if (enemy->IsAtEndOfPath()) {
-        // enemies that clear the path also do damage to defender
-        // keep it at units so its easier :)
-        defenderHealth--;
-
-        // update the text
-        defenderHealthText = std::to_string(defenderHealth);
-        tDefenderHealth.LoadFromRenderedText(
-            gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
-
-        gEnemies.erase(gEnemies.begin() + i);
-      }
-    }
+    // Drawing
 
     SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
 
-    // drawing begins here
     SDL_RenderClear(gRenderer);
 
     // render map
     tMap0.Render(gRenderer, 0, 0, LEVEL_WIDTH, LEVEL_HEIGHT);
 
-    // upd projectiles
-    for (int i = 0; i < gProjectiles.size(); ++i) {
-      RProjectile *projectile = gProjectiles[i];
-
-      projectile->Move();
-      projectile->Render(gRenderer);
-    }
-
-    // upd enemies
-    for (int i = 0; i < gEnemies.size(); ++i) {
-      REntity *enemy = gEnemies[i];
-
-      CheckProjectileCollisions(enemy, gEnemies);
-
-      enemy->MoveAlongPath();
-      enemy->SetTarget(enemyTargetX, enemyTargetY);
-      enemy->Shoot(&tBallRed, gProjectiles, dt);
-      enemy->Render(gRenderer, dt);
-    }
-
-    // make towers shoot at first enemy
-    if (gEnemies.size() > 0) {
-      towerTargetX = gEnemies[0]->GetPosX();
-      towerTargetY = gEnemies[0]->GetPosY();
-    }
-
     // render crosshair
     tCrosshair.Render(gRenderer, enemyTargetX, enemyTargetY, NULL, true);
 
-    // upd tower
-    for (int i = 0; i < gTowers.size(); ++i) {
-      REntity *tower = gTowers[i];
+    UpdateProjectiles();
+    UpdateEnemies();
+    UpdateTowers();
 
-      CheckProjectileCollisions(tower, gTowers);
-
-      tower->SetTarget(towerTargetX, towerTargetY);
-
-      // shoot only if there are enemies
-      if (gEnemies.size() > 0) {
-        tower->Shoot(&tBallBlue, gProjectiles, dt);
-      }
-
-      tower->Render(gRenderer, dt);
-    }
-
-    // render ui
-    // pos calculations are a mess and were eyeballed
-    // TODO improve that
-    vlGroup.Render(gRenderer);
-
-    int heartPosX = LEVEL_WIDTH + 30;
-    int heartPosY = 20;
-
-    int tDefHealthW = 100 * 2;
-    int tDefHealthH = 100;
-
-    tHeart.Render(gRenderer, heartPosX, heartPosY, NULL);
-    tDefenderHealth.Render(gRenderer, heartPosX + tHeart.GetWidth() + 15,
-                           heartPosY - 12, tDefHealthW, tDefHealthH);
+    DrawUI();
 
     SDL_RenderPresent(gRenderer);
 
-    // before flip
+    // Before Next Frame
+
     lastUpdateTime = currentTime;
   }
 
   Close();
 
-  return 1;
+  return 0;
 }

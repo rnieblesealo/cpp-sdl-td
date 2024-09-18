@@ -11,6 +11,7 @@
 - [x] Towers!
 - [ ] Make all assets match 128x128 so that we don't have to do resizing
 - [ ] Make the UI not god awful
+- `OPTIMIZATION` Move all entities to one vector and typecheck using an enum
 - `BUG` Hitting one target may damage another, very likely it's caused by list iteration; check warning comment
 
 ## Notes

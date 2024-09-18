@@ -54,6 +54,7 @@ public:
 
   static bool CheckCollision(SDL_Rect *a, SDL_Rect *b);
   static bool CheckCollision(SDL_Rect *a, int x, int y);
+  static float Distance(int x1, int y1, int x2, int y2);
 
   void SetPos(float x, float y);
   void SetVel(float vx, float vy);

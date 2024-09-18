@@ -157,6 +157,8 @@ void REntity::MoveAlongPath() {
 
   float dx = path[nextPathPoint].x - posX;
   float dy = path[nextPathPoint].y - posY;
+
+  // manual distance calc; use our new function!
   float d = SDL_sqrtf(SDL_powf(dx, 2) + SDL_powf(dy, 2));
 
   // if distance is very small, snap pos to node and target next node
@@ -241,6 +243,10 @@ bool REntity::CheckCollision(SDL_Rect *a, int x, int y) {
   return true;
 }
 
+float REntity::Distance(int x1, int y1, int x2, int y2){
+  return SDL_sqrtf(SDL_powf(x2 - x1, 2) + SDL_powf(y2 - y1, 2));
+}
+
 void REntity::Shoot(RTexture *projectileTexture,
                     std::vector<RProjectile *> &gProjectiles, float dt) {
 
@@ -290,6 +296,9 @@ void REntity::Render(SDL_Renderer *renderer, float dt) {
 
   // draw the healthbar
   RenderHealthBar(renderer);
+
+  // TESTING
+  // draw the collider
 }
 
 void REntity::RenderHealthBar(SDL_Renderer *renderer) {
@@ -351,6 +360,10 @@ void REntity::RenderHealthBar(SDL_Renderer *renderer) {
                          fillColor.a);
 
   SDL_RenderFillRect(renderer, &bar);
+
+  // DEBUG
+  // draw render dest
+  SDL_RenderDrawRect(renderer, bodySprite->GetRect()); 
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 }
