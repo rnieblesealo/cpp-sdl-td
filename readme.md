@@ -5,12 +5,13 @@
     - [x] Tower/defender health
 - [ ] Enemy colors
     - This is *kinda* done; there's the enum; now we need to use it
-- [ ] Music
+- [x] Music
 - [x] Click to set target
     - [ ] Snap to clicked enemy
 - [x] Towers!
 - [ ] Make all assets match 128x128 so that we don't have to do resizing
 - [ ] Make the UI not god awful
+- `BUG` Hitting one target may damage another, very likely it's caused by list iteration; check warning comment
 
 ## Notes
 

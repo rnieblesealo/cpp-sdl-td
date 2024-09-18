@@ -80,7 +80,7 @@ void RVerticalLayoutGroup::Apply() {
 
   for (int i = 0; i < items.size(); ++i) {
     // set elem position
-    items[i]->SetPosition(area.x + wPad, hPad + elemH * i);
+    items[i]->SetPosition(area.x + wPad, area.y + hPad + elemH * i);
 
     // set elem dimension
     items[i]->SetDimensions(elemW - wPad * 2, elemH - hPad * 2);

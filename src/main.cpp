@@ -31,7 +31,7 @@ const int GUI_WIDTH = 128 * 3;
 const int SCREEN_WIDTH = LEVEL_WIDTH + GUI_WIDTH;
 const int SCREEN_HEIGHT = LEVEL_HEIGHT;
 
-const int FONT_SIZE = 12;
+const int FONT_SIZE = 8;
 
 // sdl/general
 SDL_Window *gWindow = NULL;
@@ -45,6 +45,8 @@ float targetFps = 120;
 float dt = 0;
 
 // sfx/sound
+Mix_Music *songChiaroscuro;
+
 Mix_Chunk *sfxShootEnemy;
 Mix_Chunk *sfxHitEnemy;
 Mix_Chunk *sfxShootTower;
@@ -79,14 +81,14 @@ SDL_Rect cEnemyWeapon[] = {{0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128},
 RSprite sEnemy(&tEnemy, cEnemy, 1);
 RSprite sEnemyWeapon(&tEnemyWeapon, cEnemyWeapon, 8);
 
-std::vector<REntity *> gEntities;
+std::vector<REntity *> gEnemies;
 
 int enemyTargetX = 0;
 int enemyTargetY = 0;
 
-void CheckProjectileCollisions(REntity *enemy) {
+void CheckProjectileCollisions(REntity *enemy,
+                               std::vector<REntity *> &parentList) {
   REntity *self = enemy;
-  std::vector<REntity *> &parentList = gEntities;
 
   // check for projectile collisions
   for (int i = 0; i < gProjectiles.size(); ++i) {
@@ -98,7 +100,7 @@ void CheckProjectileCollisions(REntity *enemy) {
 
     // if the issuer is another entity in the list this entity is in, it's
     // friendly fire
-    bool issuerInParentList = (issuerIndex != gEntities.end());
+    bool issuerInParentList = (issuerIndex != parentList.end());
 
     if (projectileIssuer == NULL || projectileIssuer == self ||
         issuerInParentList) {
@@ -114,7 +116,7 @@ void CheckProjectileCollisions(REntity *enemy) {
 
       // TESTING
       // play enemy damage sound
-      Mix_PlayChannel(-1, sfxHitEnemy, 0);
+      Mix_PlayChannel(0, sfxHitEnemy, 0);
 
       // if health reaches zero, die
       if (self->GetHealth() == 0) {
@@ -142,7 +144,7 @@ void SpawnEnemy() {
   newEnemy->SetFireRate(3);
 
   // add enemy to reg
-  gEntities.push_back(newEnemy);
+  gEnemies.push_back(newEnemy);
 }
 
 // towers
@@ -184,7 +186,7 @@ void SpawnTower(int gridX, int gridY) {
   // add a small, random offset to the shoot timer
   newTower->AddToShootTimer((rand() % 100) / (float)100);
 
-  newTower->SetFireRate(3);
+  newTower->SetFireRate(5);
   newTower->SetProjectileSpeed(14);
 
   gTowers.push_back(newTower);
@@ -195,6 +197,8 @@ int mouseX = 0;
 int mouseY = 0;
 
 // gui
+bool leftClick = false;
+
 RTexture tCrosshair;
 RTexture tHeart;
 RTexture tDefenderHealth;
@@ -254,8 +258,6 @@ bool Init() {
   }
 
   gWindowSurface = SDL_GetWindowSurface(gWindow);
-
-  SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 0);
 
   int imageFlags = IMG_INIT_PNG;
   if (!(IMG_Init(imageFlags) & imageFlags)) {
@@ -369,8 +371,14 @@ bool LoadMedia() {
     success = false;
   }
 
-  tHeart.SetScale(14);
+  tHeart.SetScale(12);
   tHeart.ModColor(255, 0, 0);
+
+  songChiaroscuro = Mix_LoadMUS("../assets/chiaroscuro.wav");
+  if (!songChiaroscuro) {
+    PrintError();
+    success = false;
+  }
 
   sfxShootEnemy = Mix_LoadWAV("../assets/shoot.wav");
   if (!sfxShootEnemy) {
@@ -427,15 +435,16 @@ int main() {
   }
 
   // setup button graphics
-  graphicA.SetAreaColor(255, 0, 0);
+  graphicA.SetAreaColor(40, 40, 40);
 
   // setup button
 
   // setup layout group
   vlGroup.AddElement(&graphicA);
 
-  vlGroup.SetArea(LEVEL_WIDTH, 0, GUI_WIDTH, SCREEN_HEIGHT);
-  vlGroup.SetPadding(60, 60);
+  vlGroup.SetArea(LEVEL_WIDTH, tHeart.GetHeight(), GUI_WIDTH,
+                  SCREEN_HEIGHT - tHeart.GetHeight());
+  vlGroup.SetPadding(40, 40);
   vlGroup.Apply();
 
   // TESTING
@@ -447,6 +456,23 @@ int main() {
   for (int i = 0; i < nTowers; ++i) {
     SpawnTower(rand() % LEVEL_GRID_WIDTH, rand() % LEVEL_GRID_HEIGHT);
   }
+
+  // put mouse at center
+  SDL_WarpMouseInWindow(gWindow, LEVEL_WIDTH / 2, LEVEL_HEIGHT / 2);
+
+  // TESTING
+  // adjust channel volume, 0 is for sfx 1 is for music
+  // MIX_MAX_VOLUME is 128
+  Mix_Volume(0, 32);
+  Mix_Volume(1, MIX_MAX_VOLUME);
+
+  // play music
+  Mix_PlayMusic(songChiaroscuro, 1);
+
+  // getting mousestate before running eventloop doesn't give back new position
+  // set enemy target alongside cursor position manually!
+  enemyTargetX = LEVEL_WIDTH / 2;
+  enemyTargetY = LEVEL_HEIGHT / 2;
 
   SDL_Event e;
 
@@ -464,6 +490,9 @@ int main() {
     }
 
     while (SDL_PollEvent(&e)) {
+      // always get mouse position
+      SDL_GetMouseState(&mouseX, &mouseY);
+
       if (e.type == SDL_QUIT) {
         quit = true;
       }
@@ -477,11 +506,26 @@ int main() {
       // set target mouse coords; will be changed
       else if (e.type == SDL_MOUSEBUTTONDOWN) {
         if (e.button.button == SDL_BUTTON_LEFT) {
-          SDL_GetMouseState(&enemyTargetX, &enemyTargetY);
+          leftClick = true;
+        }
+      }
+
+      else if (e.type == SDL_MOUSEBUTTONUP) {
+        if (e.button.button == SDL_BUTTON_LEFT) {
+          leftClick = false;
         }
       }
 
       buttonA.HandleEvent(&e);
+    }
+
+    // move target if holding left click somewhere within the level
+    bool clickedWithinLevel = mouseX > 0 && mouseX <= LEVEL_WIDTH &&
+                              mouseY > 0 && mouseY <= LEVEL_HEIGHT;
+
+    if (leftClick && clickedWithinLevel) {
+      enemyTargetX = mouseX;
+      enemyTargetY = mouseY;
     }
 
     // WARNING: what happens if projectile/enemy is popped from the middle?
@@ -499,8 +543,8 @@ int main() {
     }
 
     // clear enemies that have cleared the path
-    for (int i = 0; i < gEntities.size(); ++i) {
-      REntity *enemy = gEntities[i];
+    for (int i = 0; i < gEnemies.size(); ++i) {
+      REntity *enemy = gEnemies[i];
 
       if (enemy->IsAtEndOfPath()) {
         // enemies that clear the path also do damage to defender
@@ -512,9 +556,11 @@ int main() {
         tDefenderHealth.LoadFromRenderedText(
             gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
 
-        gEntities.erase(gEntities.begin() + i);
+        gEnemies.erase(gEnemies.begin() + i);
       }
     }
+
+    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
 
     // drawing begins here
     SDL_RenderClear(gRenderer);
@@ -531,10 +577,10 @@ int main() {
     }
 
     // upd enemies
-    for (int i = 0; i < gEntities.size(); ++i) {
-      REntity *enemy = gEntities[i];
+    for (int i = 0; i < gEnemies.size(); ++i) {
+      REntity *enemy = gEnemies[i];
 
-      CheckProjectileCollisions(enemy);
+      CheckProjectileCollisions(enemy, gEnemies);
 
       enemy->MoveAlongPath();
       enemy->SetTarget(enemyTargetX, enemyTargetY);
@@ -543,9 +589,9 @@ int main() {
     }
 
     // make towers shoot at first enemy
-    if (gEntities.size() > 0) {
-      towerTargetX = gEntities[0]->GetPosX();
-      towerTargetY = gEntities[0]->GetPosY();
+    if (gEnemies.size() > 0) {
+      towerTargetX = gEnemies[0]->GetPosX();
+      towerTargetY = gEnemies[0]->GetPosY();
     }
 
     // render crosshair
@@ -555,34 +601,32 @@ int main() {
     for (int i = 0; i < gTowers.size(); ++i) {
       REntity *tower = gTowers[i];
 
+      CheckProjectileCollisions(tower, gTowers);
+
       tower->SetTarget(towerTargetX, towerTargetY);
-      tower->Shoot(&tBallBlue, gProjectiles, dt);
+
+      // shoot only if there are enemies
+      if (gEnemies.size() > 0) {
+        tower->Shoot(&tBallBlue, gProjectiles, dt);
+      }
+
       tower->Render(gRenderer, dt);
     }
 
     // render ui
-    SDL_SetRenderDrawColor(gRenderer, 0, 0, 0, 255);
-
-    SDL_Rect uiBg;
-
-    uiBg.x = 0;
-    uiBg.y = 0;
-    uiBg.w = SCREEN_WIDTH;
-    uiBg.h = 128 + 20;
-
-    SDL_RenderFillRect(gRenderer, &uiBg);
-
+    // pos calculations are a mess and were eyeballed
+    // TODO improve that
     vlGroup.Render(gRenderer);
 
-    int heartPosX = 15;
-    int heartPosY = 15;
+    int heartPosX = LEVEL_WIDTH + 30;
+    int heartPosY = 20;
 
-    int tDefHealthW = 128 * 2;
-    int tDefHealthH = 128;
+    int tDefHealthW = 100 * 2;
+    int tDefHealthH = 100;
 
     tHeart.Render(gRenderer, heartPosX, heartPosY, NULL);
-    tDefenderHealth.Render(gRenderer, heartPosX + tHeart.GetWidth() + 10,
-                           heartPosY, tDefHealthW, tDefHealthH);
+    tDefenderHealth.Render(gRenderer, heartPosX + tHeart.GetWidth() + 15,
+                           heartPosY - 12, tDefHealthW, tDefHealthH);
 
     SDL_RenderPresent(gRenderer);
 

@@ -262,7 +262,7 @@ void REntity::Shoot(RTexture *projectileTexture,
     gProjectiles.push_back(n);
 
     // play shoot sound
-    Mix_PlayChannel(-1, shootSound, 0);
+    Mix_PlayChannel(0, shootSound, 0);
 
     shootTimer.Reset();
   }
