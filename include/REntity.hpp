@@ -110,6 +110,9 @@ private:
 
   // identifier
   EntityKind kind;
+
+  // rect/collider
+  SDL_Rect rect;
 };
 
 #endif

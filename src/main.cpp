@@ -36,7 +36,8 @@ const int FONT_SIZE = 8;
 
 // Files
 
-const std::filesystem::path PATH_ASSETS = std::filesystem::current_path().parent_path() / "assets"; 
+const std::filesystem::path PATH_ASSETS =
+    std::filesystem::current_path().parent_path() / "assets";
 const std::filesystem::path PATH_PNG = PATH_ASSETS / "png";
 const std::filesystem::path PATH_WAV = PATH_ASSETS / "wav";
 const std::filesystem::path PATH_FONT = PATH_ASSETS / "font";
@@ -62,6 +63,10 @@ int mouseX = 0;
 int mouseY = 0;
 
 bool leftClick = false;
+bool mouseWithinLevel = false;
+
+int crosshairSnapX;
+int crosshairSnapY;
 
 // GUI
 
@@ -69,16 +74,23 @@ RTexture tHeart;
 RTexture tDefenderHealth;
 RTexture tCrosshair;
 
-RGraphic graphicA;
-RButton buttonA(&graphicA, NULL);
+RGraphic graphicRedTank;
+RButton buttonRedTank(&graphicRedTank, NULL);
+
+RGraphic graphicBlueTank;
+RButton buttonBlueTank(&graphicBlueTank, NULL);
+
+RGraphic graphicYellowTank;
+RButton buttonYellowTank(&graphicYellowTank, NULL);
 
 RVerticalLayoutGroup vlGroup;
 
 std::string defenderHealthText;
+int defenderHealthTextWidth = 3; // used to pad with 0's when not triple digit
 
 // Music
 
-Mix_Music *songChiaroscuro;
+Mix_Music *songAutoDaFe;
 
 // SFX
 
@@ -88,7 +100,7 @@ Mix_Chunk *sfxShootTower;
 
 // Gameplay
 
-int defenderMaxHealth = 100;
+int defenderMaxHealth = 5;
 int defenderHealth = defenderMaxHealth;
 
 // Maps
@@ -117,8 +129,10 @@ void CheckProjectileCollisions(REntity *enemy,
   REntity *self = enemy;
 
   // check for projectile collisions
-  for (int i = 0; i < gProjectiles.size(); ++i) {
-    RProjectile *projectile = gProjectiles[i];
+  std::vector<RProjectile *>::iterator iter;
+  for (iter = gProjectiles.begin(); iter != gProjectiles.end();) {
+    RProjectile *projectile =
+        gProjectiles.at(std::distance(gProjectiles.begin(), iter));
     REntity *projectileIssuer = projectile->GetIssuer();
 
     auto issuerIndex =
@@ -130,6 +144,7 @@ void CheckProjectileCollisions(REntity *enemy,
 
     if (projectileIssuer == NULL || projectileIssuer == self ||
         issuerInParentList) {
+      iter++;
       continue;
     }
 
@@ -154,7 +169,11 @@ void CheckProjectileCollisions(REntity *enemy,
       }
 
       // erase colliding projectile
-      gProjectiles.erase(gProjectiles.begin() + i);
+      iter = gProjectiles.erase(iter);
+    }
+
+    else {
+      iter++;
     }
   }
 }
@@ -186,7 +205,7 @@ void SpawnEnemy() {
   newEnemy->SetPos(map0Path[0].x, map0Path[0].y);
 
   // TESTING
-  newEnemy->SetFireRate(3);
+  newEnemy->SetFireRate(8);
 
   // add enemy to reg
   gEnemies.push_back(newEnemy);
@@ -232,7 +251,7 @@ void SpawnTower(int gridX, int gridY) {
   // add a small, random offset to the shoot timer
   newTower->AddToShootTimer((rand() % 100) / (float)100);
 
-  newTower->SetFireRate(5);
+  newTower->SetFireRate(4);
   newTower->SetProjectileSpeed(14);
 
   gTowers.push_back(newTower);
@@ -355,18 +374,24 @@ void MakeMapPaths() {
 void ConfigureGUI() {
   // Graphic Colors
 
-  graphicA.SetAreaColor(40, 40, 40);
+  graphicRedTank.SetAreaColor(40, 40, 40);
+  graphicBlueTank.SetAreaColor(40, 40, 40);
+  graphicYellowTank.SetAreaColor(40, 40, 40);
 
   // Button Actions
 
-  buttonA.SetAction(&SpawnEnemy);
+  buttonRedTank.SetAction(&SpawnEnemy);
+  buttonBlueTank.SetAction(NULL);
+  buttonYellowTank.SetAction(NULL);
 
   // Layout Group
   // 1. Add elements
   // 2. Position & pad
   // 3. Apply (readies it for drawing)
 
-  vlGroup.AddElement(&graphicA);
+  vlGroup.AddElement(&graphicRedTank);
+  vlGroup.AddElement(&graphicBlueTank);
+  vlGroup.AddElement(&graphicYellowTank);
 
   vlGroup.SetArea(LEVEL_WIDTH, tHeart.GetHeight(), GUI_WIDTH,
                   SCREEN_HEIGHT - tHeart.GetHeight());
@@ -413,34 +438,36 @@ bool LoadMedia() {
 
   // Towers
 
-  if (!tTowerBase.LoadFromFile(gRenderer, (PATH_PNG / "b-tower-base.png").c_str(), 255,
-                               255, 255)) {
+  if (!tTowerBase.LoadFromFile(
+          gRenderer, (PATH_PNG / "b-tower-base.png").c_str(), 255, 255, 255)) {
     PrintError();
     success = false;
   }
 
-  if (!tTowerWeapon.LoadFromFile(gRenderer, (PATH_PNG / "b-tower-weapon.png").c_str())) {
+  if (!tTowerWeapon.LoadFromFile(gRenderer,
+                                 (PATH_PNG / "b-tower-weapon.png").c_str())) {
     PrintError();
     success = false;
   }
 
   // Enemies
 
-  if (!tEnemy.LoadFromFile(gRenderer, (PATH_PNG / "r-tank-body.png").c_str(), 255, 255,
-                           255)) {
+  if (!tEnemy.LoadFromFile(gRenderer, (PATH_PNG / "r-tank-body.png").c_str(),
+                           255, 255, 255)) {
     PrintError();
     success = false;
   }
 
-  if (!tEnemyWeapon.LoadFromFile(gRenderer, (PATH_PNG / "r-tank-weapon.png").c_str(), 255,
-                                 255, 255)) {
+  if (!tEnemyWeapon.LoadFromFile(
+          gRenderer, (PATH_PNG / "r-tank-weapon.png").c_str(), 255, 255, 255)) {
     PrintError();
     success = false;
   }
 
   // GUI
 
-  if (!tCrosshair.LoadFromFile(gRenderer, (PATH_PNG / "crosshair.png").c_str())) {
+  if (!tCrosshair.LoadFromFile(gRenderer,
+                               (PATH_PNG / "crosshair.png").c_str())) {
     PrintError();
     success = false;
   }
@@ -450,7 +477,8 @@ bool LoadMedia() {
   // TODO make the default arg for colorkey not do a colorkey in the first place
   // set bogus modcolor for now bc we use both white and red in the heart's
   // actual sprite
-  if (!tHeart.LoadFromFile(gRenderer, (PATH_PNG / "heart.png").c_str(), 1, 1, 1)) {
+  if (!tHeart.LoadFromFile(gRenderer, (PATH_PNG / "heart.png").c_str(), 1, 1,
+                           1)) {
     PrintError();
     success = false;
   }
@@ -459,13 +487,20 @@ bool LoadMedia() {
   tHeart.ModColor(255, 0, 0);
 
   defenderHealthText = std::to_string(defenderHealth);
+  defenderHealthText =
+      std::string(defenderHealthTextWidth -
+                      std::min(defenderHealthTextWidth,
+                               (int)defenderHealthText.length()),
+                  '0') +
+      defenderHealthText;
+  
   tDefenderHealth.LoadFromRenderedText(
       gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
 
   // Music
 
-  songChiaroscuro = Mix_LoadMUS((PATH_WAV / "chiaroscuro.wav").c_str());
-  if (!songChiaroscuro) {
+  songAutoDaFe = Mix_LoadMUS((PATH_WAV / "auto-da-fe.mp3").c_str());
+  if (!songAutoDaFe) {
     PrintError();
     success = false;
   }
@@ -489,7 +524,6 @@ bool LoadMedia() {
     PrintError();
     success = false;
   }
-
 
   return success;
 }
@@ -544,7 +578,14 @@ void ClearFinishedEnemies() {
       defenderHealth--;
 
       // update the text
+      // use zeros to pad!
       defenderHealthText = std::to_string(defenderHealth);
+      defenderHealthText =
+          std::string(defenderHealthTextWidth -
+                          std::min(defenderHealthTextWidth,
+                                   (int)defenderHealthText.length()),
+                      '0') +
+          defenderHealthText;
       tDefenderHealth.LoadFromRenderedText(
           gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
 
@@ -556,7 +597,7 @@ void ClearFinishedEnemies() {
 void UpdateProjectiles() {
   // upd projectiles
   for (int i = 0; i < gProjectiles.size(); ++i) {
-    RProjectile *projectile = gProjectiles[i];
+    RProjectile *projectile = gProjectiles.at(i);
 
     projectile->Move();
     projectile->Render(gRenderer);
@@ -565,7 +606,7 @@ void UpdateProjectiles() {
 
 void UpdateEnemies() {
   for (int i = 0; i < gEnemies.size(); ++i) {
-    REntity *enemy = gEnemies[i];
+    REntity *enemy = gEnemies.at(i);
 
     CheckProjectileCollisions(enemy, gEnemies);
 
@@ -577,25 +618,30 @@ void UpdateEnemies() {
 }
 
 void UpdateTowers() {
+  bool didSetSnap = false;
+
   for (int i = 0; i < gTowers.size(); ++i) {
-    REntity *tower = gTowers[i];
+    REntity *tower = gTowers.at(i);
+
+    if (!didSetSnap &&
+        REntity::CheckCollision(tower->GetRect(), mouseX, mouseY)) {
+      crosshairSnapX = tower->GetPosX();
+      crosshairSnapY = tower->GetPosY();
+
+      didSetSnap = true;
+    }
 
     CheckProjectileCollisions(tower, gTowers);
-
-    // target first enemy always if in range and there is one
-    // TODO proper targeting system
 
     REntity *targetEnemy;
 
     if (gEnemies.size() > 0) {
-      targetEnemy = gEnemies[0];
+      targetEnemy = gEnemies.at(0);
 
-      float towerRange = 500;
+      float towerRange = 1000;
       float targetDistance =
           REntity::Distance(targetEnemy->GetPosX(), targetEnemy->GetPosY(),
                             tower->GetPosX(), tower->GetPosY());
-
-      // printf("%f\n", targetDistance);
 
       if (targetDistance < towerRange) {
         tower->SetTarget(targetEnemy->GetPosX(), targetEnemy->GetPosY());
@@ -604,6 +650,13 @@ void UpdateTowers() {
     }
 
     tower->Render(gRenderer, dt);
+  }
+
+  // if no towers collide with the cursor, we should set the crosshair
+  // snap points to be invalid
+  if (!didSetSnap) {
+    crosshairSnapX = -1;
+    crosshairSnapY = -1;
   }
 }
 
@@ -641,12 +694,12 @@ int main() {
   ConfigureGUI();
 
   // TODO remove; spawn some towers for testing
-  int nTowers = 4;
+  int nTowers = 32;
   for (int i = 0; i < nTowers; ++i) {
     SpawnTower(rand() % LEVEL_GRID_WIDTH, rand() % LEVEL_GRID_HEIGHT);
   }
 
-  Mix_PlayMusic(songChiaroscuro, 1);
+  Mix_PlayMusic(songAutoDaFe, -1);
 
   // Main Loop
 
@@ -697,16 +750,25 @@ int main() {
 
       // Individual Event Handling
 
-      buttonA.HandleEvent(&e);
+      buttonRedTank.HandleEvent(&e);
     }
 
     // move target if holding left click somewhere within the level
-    bool mouseWithinLevel = mouseX > 0 && mouseX <= LEVEL_WIDTH && mouseY > 0 &&
-                            mouseY <= LEVEL_HEIGHT;
+    mouseWithinLevel = mouseX > 0 && mouseX <= LEVEL_WIDTH && mouseY > 0 &&
+                       mouseY <= LEVEL_HEIGHT;
 
     if (leftClick && mouseWithinLevel) {
-      enemyTargetX = mouseX;
-      enemyTargetY = mouseY;
+      bool shouldSnap = crosshairSnapX >= 0 && crosshairSnapY >= 0;
+
+      if (shouldSnap) {
+        enemyTargetX = crosshairSnapX;
+        enemyTargetY = crosshairSnapY;
+      }
+
+      else {
+        enemyTargetX = mouseX;
+        enemyTargetY = mouseY;
+      }
     }
 
     ClearOffBoundsProjectiles();

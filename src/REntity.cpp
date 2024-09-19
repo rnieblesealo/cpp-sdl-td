@@ -95,7 +95,7 @@ float REntity::GetFireRate() { return fireRate; }
 SDL_Rect *REntity::GetRect() {
   // use body sprite draw rect for now
   // probably going to use something else as collider in the future
-  return bodySprite->GetRect();
+  return &rect;
 }
 
 void REntity::SetPos(float x, float y) {
@@ -297,8 +297,11 @@ void REntity::Render(SDL_Renderer *renderer, float dt) {
   // draw the healthbar
   RenderHealthBar(renderer);
 
-  // TESTING
-  // draw the collider
+  // probably shouldn't be here, but move the rect w/the entity
+  rect.w = bodySprite->GetRect()->w;
+  rect.h = bodySprite->GetRect()->h;
+  rect.x = posX - (float)rect.w / 2;
+  rect.y = posY - (float)rect.h / 2;
 }
 
 void REntity::RenderHealthBar(SDL_Renderer *renderer) {
@@ -363,7 +366,7 @@ void REntity::RenderHealthBar(SDL_Renderer *renderer) {
 
   // DEBUG
   // draw render dest
-  SDL_RenderDrawRect(renderer, bodySprite->GetRect()); 
+  // SDL_RenderDrawRect(renderer, this->GetRect()); 
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 }

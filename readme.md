@@ -1,18 +1,35 @@
-## Todo
+# Dower Tefense
 
-- [ ] Damage/health system
+![Dower Tefense illustration](.github/gameplay.gif)
+
+Welcome to Dower Tefense! This is a WIP TD game with some RTS elements made using C++ and SDL2, mostly as a learning exercise.
+
+Instead of being the defender, *you are the attacker!* Place down your troops, aim at the towers, and watch the action!
+
+You win if you destroy all defenses or reach the end enough times, but if you run out of troops, you're outta here.
+
+Good luck!
+
+[Pixel art by zintoki](https://zintoki.itch.io/ground-shaker)
+
+Music and SFX by me :)
+
+## To-Do
+
+- [X] Damage/health system
     - [x] Enemy/tower healthbars
     - [x] Tower/defender health
 - [ ] Enemy colors
     - This is *kinda* done; there's the enum; now we need to use it
 - [x] Music
 - [x] Click to set target
-    - [ ] Snap to clicked enemy
+    - [x] Snap to clicked enemy
 - [x] Towers!
 - [ ] Make all assets match 128x128 so that we don't have to do resizing
 - [ ] Make the UI not god awful
-- `OPTIMIZATION` Move all entities to one vector and typecheck using an enum
-- `BUG` Hitting one target may damage another, very likely it's caused by list iteration; check warning comment
+- [ ] Win condition
+- [ ] `OPTIMIZATION` Move all entities to one vector and typecheck using an enum
+- [ ] `BUG` Hitting one target may damage another, very likely it's caused by list iteration; check warning comment
 
 ## Notes
 
@@ -32,7 +49,6 @@ Tower defense game, but you control the invaders instead!
 - If a tank destroyed its structure, it'll auto-target the closest tower
 - **You win when enough tanks have reached the end, or when the game is out of towers!**
 - There will be power-ups which can be applied to tanks, giving them extra damage, resistance, etc.
-
 
 ### Maps
 1. Make maps by hand in image editor using tile editor
