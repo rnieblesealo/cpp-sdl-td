@@ -15,6 +15,7 @@
 #include <SDL_video.h>
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
 #include <string>
 
 const int TILE_WIDTH = 128;
@@ -32,6 +33,13 @@ const int SCREEN_WIDTH = LEVEL_WIDTH + GUI_WIDTH;
 const int SCREEN_HEIGHT = LEVEL_HEIGHT;
 
 const int FONT_SIZE = 8;
+
+// Files
+
+const std::filesystem::path PATH_ASSETS = std::filesystem::current_path().parent_path() / "assets"; 
+const std::filesystem::path PATH_PNG = PATH_ASSETS / "png";
+const std::filesystem::path PATH_WAV = PATH_ASSETS / "wav";
+const std::filesystem::path PATH_FONT = PATH_ASSETS / "font";
 
 // SDL
 
@@ -368,14 +376,11 @@ void ConfigureGUI() {
 }
 
 bool LoadMedia() {
-  // WARNING: all filepaths are wrong for now lmao
-  // just refactoring order in order to make things easier
-
   bool success = true;
 
   // Fonts
 
-  gFont = TTF_OpenFont("../assets/better-font.ttf", FONT_SIZE);
+  gFont = TTF_OpenFont((PATH_FONT / "better-font.ttf").c_str(), FONT_SIZE);
   if (gFont == NULL) {
     PrintError();
     success = false;
@@ -383,14 +388,14 @@ bool LoadMedia() {
 
   // Maps
 
-  if (!tMap0.LoadFromFile(gRenderer, "../assets/map0.png")) {
+  if (!tMap0.LoadFromFile(gRenderer, (PATH_PNG / "map0.png").c_str())) {
     PrintError();
     success = false;
   }
 
   // Projectiles
 
-  if (!tBallRed.LoadFromFile(gRenderer, "../assets/ball.png")) {
+  if (!tBallRed.LoadFromFile(gRenderer, (PATH_PNG / "ball.png").c_str())) {
     PrintError();
     success = false;
   }
@@ -398,7 +403,7 @@ bool LoadMedia() {
   tBallRed.ModColor(255, 0, 0);
   tBallRed.SetScale(4);
 
-  if (!tBallBlue.LoadFromFile(gRenderer, "../assets/ball.png")) {
+  if (!tBallBlue.LoadFromFile(gRenderer, (PATH_PNG / "ball.png").c_str())) {
     PrintError();
     success = false;
   }
@@ -408,26 +413,26 @@ bool LoadMedia() {
 
   // Towers
 
-  if (!tTowerBase.LoadFromFile(gRenderer, "../assets/b-tower-base.png", 255,
+  if (!tTowerBase.LoadFromFile(gRenderer, (PATH_PNG / "b-tower-base.png").c_str(), 255,
                                255, 255)) {
     PrintError();
     success = false;
   }
 
-  if (!tTowerWeapon.LoadFromFile(gRenderer, "../assets/b-tower-weapon.png")) {
+  if (!tTowerWeapon.LoadFromFile(gRenderer, (PATH_PNG / "b-tower-weapon.png").c_str())) {
     PrintError();
     success = false;
   }
 
   // Enemies
 
-  if (!tEnemy.LoadFromFile(gRenderer, "../assets/r-tank-body.png", 255, 255,
+  if (!tEnemy.LoadFromFile(gRenderer, (PATH_PNG / "r-tank-body.png").c_str(), 255, 255,
                            255)) {
     PrintError();
     success = false;
   }
 
-  if (!tEnemyWeapon.LoadFromFile(gRenderer, "../assets/r-tank-turret1.png", 255,
+  if (!tEnemyWeapon.LoadFromFile(gRenderer, (PATH_PNG / "r-tank-weapon.png").c_str(), 255,
                                  255, 255)) {
     PrintError();
     success = false;
@@ -435,7 +440,7 @@ bool LoadMedia() {
 
   // GUI
 
-  if (!tCrosshair.LoadFromFile(gRenderer, "../assets/crosshair.png")) {
+  if (!tCrosshair.LoadFromFile(gRenderer, (PATH_PNG / "crosshair.png").c_str())) {
     PrintError();
     success = false;
   }
@@ -445,7 +450,7 @@ bool LoadMedia() {
   // TODO make the default arg for colorkey not do a colorkey in the first place
   // set bogus modcolor for now bc we use both white and red in the heart's
   // actual sprite
-  if (!tHeart.LoadFromFile(gRenderer, "../assets/heart.png", 1, 1, 1)) {
+  if (!tHeart.LoadFromFile(gRenderer, (PATH_PNG / "heart.png").c_str(), 1, 1, 1)) {
     PrintError();
     success = false;
   }
@@ -459,7 +464,7 @@ bool LoadMedia() {
 
   // Music
 
-  songChiaroscuro = Mix_LoadMUS("../assets/chiaroscuro.wav");
+  songChiaroscuro = Mix_LoadMUS((PATH_WAV / "chiaroscuro.wav").c_str());
   if (!songChiaroscuro) {
     PrintError();
     success = false;
@@ -467,23 +472,24 @@ bool LoadMedia() {
 
   // SFX
 
-  sfxShootEnemy = Mix_LoadWAV("../assets/shoot.wav");
+  sfxShootEnemy = Mix_LoadWAV((PATH_WAV / "shoot0.wav").c_str());
   if (!sfxShootEnemy) {
     PrintError();
     success = false;
   }
 
-  sfxHitEnemy = Mix_LoadWAV("../assets/hit.wav");
+  sfxShootTower = Mix_LoadWAV((PATH_WAV / "shoot1.wav").c_str());
+  if (!sfxShootEnemy) {
+    PrintError();
+    success = false;
+  }
+
+  sfxHitEnemy = Mix_LoadWAV((PATH_WAV / "hit0.wav").c_str());
   if (!sfxHitEnemy) {
     PrintError();
     success = false;
   }
 
-  sfxShootTower = Mix_LoadWAV("../assets/shoot1.wav");
-  if (!sfxShootEnemy) {
-    PrintError();
-    success = false;
-  }
 
   return success;
 }
