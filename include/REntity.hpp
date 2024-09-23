@@ -13,6 +13,12 @@ typedef enum EntityKind{
   TOWER
 } EntityKind;
 
+typedef enum EnemyColor{
+  E_RED,
+  E_GREEN,
+  E_YELLOW
+} EnemyColor;
+
 // you can do this ???
 class REntity;
 

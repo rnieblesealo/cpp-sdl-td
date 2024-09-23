@@ -60,8 +60,6 @@ std::string IntToPaddedText(int value, int width) {
   n_str =
       std::string(width - std::min(width, (int)n_str.length()), '0') + n_str;
 
-  n_str = "x" + n_str;
-
   return n_str;
 }
 
@@ -108,8 +106,8 @@ RTexture tCrosshair;
 RGraphic graphicRedTank;
 RButton buttonRedTank(&graphicRedTank, NULL);
 
-RGraphic graphicGreenTank;
-RButton buttonBlueTank(&graphicGreenTank, NULL);
+RGraphic graphicBlueTank;
+RButton buttonBlueTank(&graphicBlueTank, NULL);
 
 RGraphic graphicYellowTank;
 RButton buttonYellowTank(&graphicYellowTank, NULL);
@@ -213,22 +211,15 @@ void CheckProjectileCollisions(REntity *enemy,
 
 std::vector<REntity *> gEnemies;
 
-int amtRed = 999;
-int amtGreen = 999;
-int amtYellow = 999;
+int amtRed = 20;
+int amtGreen = 0;
+int amtYellow = 0;
 
 int enemyTargetX = 0;
 int enemyTargetY = 0;
 
 RTexture tEnemy;
 RTexture tEnemyWeapon;
-
-
-RTexture tEnemyGreen;
-RTexture tEnemyWeaponGreen;
-
-RTexture tEnemyYellow;
-RTexture tEnemyWeaponYellow;
 
 SDL_Rect cEnemy[] = {{0, 0, 128, 128}};
 SDL_Rect cEnemyWeapon[] = {{0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128},
@@ -252,14 +243,13 @@ void SpawnRedEnemy(){
 
   // set properties
   newEnemy->SetFireRate(8);
-  newEnemy->SetSpeed(3);
 
   // add enemy to reg
   gEnemies.push_back(newEnemy);
 
   // now have one less enemy!
   amtRed--;
-  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 3).c_str());  
+  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 3));  
 }
 
 // Towers
@@ -303,7 +293,7 @@ void SpawnTower(int gridX, int gridY) {
   // add a small, random offset to the shoot timer
   newTower->AddToShootTimer((rand() % 100) / (float)100);
 
-  newTower->SetFireRate(5);
+  newTower->SetFireRate(20);
   newTower->SetProjectileSpeed(14);
 
   gTowers.push_back(newTower);
@@ -411,28 +401,19 @@ void ConfigureGUI() {
   // Graphic Colors
 
   graphicRedTank.SetAreaColor(40, 40, 40);
-  graphicGreenTank.SetAreaColor(40, 40, 40);
+  graphicBlueTank.SetAreaColor(40, 40, 40);
   graphicYellowTank.SetAreaColor(40, 40, 40);
 
   // Button Icons
 
   graphicRedTank.SetIcon(&tEnemy);
-  graphicGreenTank.SetIcon(&tEnemyGreen);
-  graphicYellowTank.SetIcon(&tEnemyYellow);
 
   // Button Text
 
   graphicRedTank.SetTextPadding(25);
   graphicRedTank.SetTextScale(8);
-  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 2).c_str()); 
 
-  graphicGreenTank.SetTextPadding(25);
-  graphicGreenTank.SetTextScale(8);
-  graphicGreenTank.SetText(gRenderer, gFont, IntToPaddedText(amtGreen, 2).c_str()); 
-
-  graphicYellowTank.SetTextPadding(25);
-  graphicYellowTank.SetTextScale(8);
-  graphicYellowTank.SetText(gRenderer, gFont, IntToPaddedText(amtYellow, 2).c_str()); 
+  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 3).c_str()); 
 
   // Button Actions
 
@@ -446,7 +427,7 @@ void ConfigureGUI() {
   // 3. Apply (readies it for drawing)
 
   vlGroup.AddElement(&graphicRedTank);
-  vlGroup.AddElement(&graphicGreenTank);
+  vlGroup.AddElement(&graphicBlueTank);
   vlGroup.AddElement(&graphicYellowTank);
 
   vlGroup.SetArea(LEVEL_WIDTH, tHeart.GetHeight(), GUI_WIDTH,
@@ -519,31 +500,6 @@ bool LoadMedia() {
     PrintError();
     success = false;
   }
-
-  if (!tEnemyGreen.LoadFromFile(gRenderer, (PATH_PNG / "g-tank-body.png").c_str(),
-                           255, 255, 255)) {
-    PrintError();
-    success = false;
-  }
-
-  if (!tEnemyWeaponGreen.LoadFromFile(
-          gRenderer, (PATH_PNG / "g-tank-weapon.png").c_str(), 255, 255, 255)) {
-    PrintError();
-    success = false;
-  }
-
-  if (!tEnemyYellow.LoadFromFile(gRenderer, (PATH_PNG / "y-tank-body.png").c_str(),
-                           255, 255, 255)) {
-    PrintError();
-    success = false;
-  }
-
-  if (!tEnemyWeaponYellow.LoadFromFile(
-          gRenderer, (PATH_PNG / "y-tank-weapon.png").c_str(), 255, 255, 255)) {
-    PrintError();
-    success = false;
-  }
-
 
   // GUI
 
@@ -769,7 +725,7 @@ int main() {
   ConfigureGUI();
 
   // TODO remove; spawn some towers for testing
-  int nTowers = 24;
+  int nTowers = 50;
   for (int i = 0; i < nTowers; ++i) {
     SpawnTower(rand() % LEVEL_GRID_WIDTH, rand() % LEVEL_GRID_HEIGHT);
   }
