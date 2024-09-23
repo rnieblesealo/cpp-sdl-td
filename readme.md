@@ -20,13 +20,13 @@ Music and SFX by me :)
     - [x] Enemy/tower healthbars
     - [x] Tower/defender health
 - [ ] Enemy colors
-    - [ ] Button Icons
+    - [x] Button icons
 - [x] Music
 - [x] Click to set target
     - [x] Snap to clicked enemy
 - [x] Towers!
 - [ ] Make all assets match 128x128 so that we don't have to do resizing
-- [ ] Make the UI not god awful
+- [x] Make the UI not god awful
 - [ ] Win condition
 - [ ] `REFACTOR` UI code is a mess! Fix :)
 - [ ] `OPTIMIZATION` Move all entities to one vector and typecheck using an enum
