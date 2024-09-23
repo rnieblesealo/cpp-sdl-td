@@ -20,7 +20,7 @@ Music and SFX by me :)
     - [x] Enemy/tower healthbars
     - [x] Tower/defender health
 - [ ] Enemy colors
-    - This is *kinda* done; there's the enum; now we need to use it
+    - [ ] Button Icons
 - [x] Music
 - [x] Click to set target
     - [x] Snap to clicked enemy
@@ -28,8 +28,10 @@ Music and SFX by me :)
 - [ ] Make all assets match 128x128 so that we don't have to do resizing
 - [ ] Make the UI not god awful
 - [ ] Win condition
+- [ ] `REFACTOR` UI code is a mess! Fix :)
 - [ ] `OPTIMIZATION` Move all entities to one vector and typecheck using an enum
 - [ ] `BUG` Hitting one target may damage another, very likely it's caused by list iteration; check warning comment
+- [ ] `BUG` Are we freeing the texture in GUI graphics correctly? 
 
 ## Notes
 

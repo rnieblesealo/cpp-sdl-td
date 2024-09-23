@@ -27,7 +27,7 @@ const int LEVEL_GRID_HEIGHT = 12;
 const int LEVEL_WIDTH = TILE_WIDTH * LEVEL_GRID_WIDTH;
 const int LEVEL_HEIGHT = TILE_HEIGHT * LEVEL_GRID_HEIGHT;
 
-const int GUI_WIDTH = 128 * 3;
+const int GUI_WIDTH = TILE_WIDTH * 3;
 
 const int SCREEN_WIDTH = LEVEL_WIDTH + GUI_WIDTH;
 const int SCREEN_HEIGHT = LEVEL_HEIGHT;
@@ -243,6 +243,7 @@ void SpawnTower(int gridX, int gridY) {
   gridY = gridY * TILE_HEIGHT + TILE_HEIGHT / 2;
 
   REntity *newTower =
+
       new REntity(TOWER, &sTowerBase, &sTowerWeapon, sfxShootTower);
 
   // spawn tower in coords relative to grid
@@ -251,13 +252,23 @@ void SpawnTower(int gridX, int gridY) {
   // add a small, random offset to the shoot timer
   newTower->AddToShootTimer((rand() % 100) / (float)100);
 
-  newTower->SetFireRate(4);
+  newTower->SetFireRate(20);
   newTower->SetProjectileSpeed(14);
 
   gTowers.push_back(newTower);
 }
 
-// Debugging
+// Debugging/Util
+
+std::string IntToPaddedText(int value, int width) {
+  // c++ handles std::string on its own so no manual mallocing needs to happen
+  // here; this function works!
+  std::string n_str = std::to_string(value);
+  n_str =
+      std::string(width - std::min(width, (int)n_str.length()), '0') + n_str;
+
+  return n_str;
+}
 
 void DrawPath(SDL_Renderer *renderer, SDL_Point *path, int pathLength) {
   // draw path nodes to ensure they're ok
@@ -338,6 +349,9 @@ bool Init() {
   enemyTargetX = LEVEL_WIDTH / 2;
   enemyTargetY = LEVEL_HEIGHT / 2;
 
+  // scale screen
+  // SDL_RenderSetLogicalSize(gRenderer, 1920, 1080);
+
   return success;
 }
 
@@ -377,6 +391,17 @@ void ConfigureGUI() {
   graphicRedTank.SetAreaColor(40, 40, 40);
   graphicBlueTank.SetAreaColor(40, 40, 40);
   graphicYellowTank.SetAreaColor(40, 40, 40);
+
+  // Button Icons
+
+  graphicRedTank.SetIcon(&tEnemy);
+
+  // Button Text
+
+  graphicRedTank.SetTextPadding(25);
+  graphicRedTank.SetTextScale(8);
+
+  graphicRedTank.SetText(gRenderer, gFont, "x015");
 
   // Button Actions
 
@@ -493,7 +518,7 @@ bool LoadMedia() {
                                (int)defenderHealthText.length()),
                   '0') +
       defenderHealthText;
-  
+
   tDefenderHealth.LoadFromRenderedText(
       gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
 
@@ -577,18 +602,12 @@ void ClearFinishedEnemies() {
       // keep it at units so its easier :)
       defenderHealth--;
 
-      // update the text
-      // use zeros to pad!
-      defenderHealthText = std::to_string(defenderHealth);
-      defenderHealthText =
-          std::string(defenderHealthTextWidth -
-                          std::min(defenderHealthTextWidth,
-                                   (int)defenderHealthText.length()),
-                      '0') +
-          defenderHealthText;
+      // update health text
       tDefenderHealth.LoadFromRenderedText(
-          gRenderer, gFont, defenderHealthText.c_str(), 255, 255, 255);
+          gRenderer, gFont, IntToPaddedText(defenderHealth, 3).c_str(), 255,
+          255, 255);
 
+      // clear enemy
       gEnemies.erase(gEnemies.begin() + i);
     }
   }
@@ -694,7 +713,7 @@ int main() {
   ConfigureGUI();
 
   // TODO remove; spawn some towers for testing
-  int nTowers = 32;
+  int nTowers = 50;
   for (int i = 0; i < nTowers; ++i) {
     SpawnTower(rand() % LEVEL_GRID_WIDTH, rand() % LEVEL_GRID_HEIGHT);
   }

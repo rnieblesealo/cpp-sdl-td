@@ -8,6 +8,8 @@
 #include <SDL_ttf.h>
 #include <vector>
 
+typedef enum RDirection { R_TOP, R_BOTTOM, R_LEFT, R_RIGHT, R_NONE } RDirection;
+
 class RGraphic {
 public:
   RGraphic();
@@ -16,18 +18,25 @@ public:
 
   void SetDimensions(int w, int h);
   void SetPosition(int x, int y);
-  void SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text,
-               Uint8 r, Uint8 g, Uint8 b);
+  void SetTextColor(Uint8 r, Uint8 g, Uint8 b);
+  void SetTextPadding(int padding);
+  void SetTextScale(int scale);
+  void SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text);
+  void SetIcon(RTexture *icon);
   void SetAreaColor(Uint8 r, Uint8 g, Uint8 b);
 
   void Render(SDL_Renderer *renderer);
 
 private:
-  RTexture text;
   SDL_Rect area;
-
   SDL_Color areaColor;
+
+  RTexture *icon;
+
+  RTexture text;
+  RDirection textAnchor;
   SDL_Color textColor;
+  int textPadding;
 };
 
 class RButton {

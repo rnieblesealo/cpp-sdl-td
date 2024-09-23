@@ -1,15 +1,18 @@
 #include "RGUI.hpp"
+#include <SDL_render.h>
 
 RGraphic::RGraphic() {
-  areaColor.r = 255;
-  areaColor.g = 255;
-  areaColor.b = 255;
+  areaColor.r = 15;
+  areaColor.g = 15;
+  areaColor.b = 15;
   areaColor.a = 255;
 
-  textColor.r = 0;
-  textColor.g = 0;
-  textColor.b = 0;
+  textColor.r = 255;
+  textColor.g = 255;
+  textColor.b = 255;
   textColor.a = 255;
+
+  textAnchor = R_BOTTOM;
 }
 
 SDL_Rect *RGraphic::GetArea() { return &area; }
@@ -24,10 +27,25 @@ void RGraphic::SetPosition(int x, int y) {
   area.y = y;
 }
 
-void RGraphic::SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text,
-                       Uint8 r, Uint8 g, Uint8 b) {
-  this->text.LoadFromRenderedText(renderer, font, text, r, g, b);
+void RGraphic::SetTextColor(Uint8 r, Uint8 g, Uint8 b){
+  textColor.r = r;
+  textColor.g = g;
+  textColor.b = b;
 }
+
+void RGraphic::SetTextPadding(int padding){
+  textPadding = padding;
+}
+
+void RGraphic::SetTextScale(int scale){
+  text.SetScale(scale);
+}
+
+void RGraphic::SetText(SDL_Renderer *renderer, TTF_Font *font, const char *text){
+  this->text.LoadFromRenderedText(renderer, font, text, textColor.r, textColor.g, textColor.b); 
+}
+
+void RGraphic::SetIcon(RTexture *icon) { this->icon = icon; }
 
 void RGraphic::SetAreaColor(Uint8 r, Uint8 g, Uint8 b) {
   areaColor.r = r;
@@ -42,8 +60,40 @@ void RGraphic::Render(SDL_Renderer *renderer) {
   SDL_RenderFillRect(renderer, &area);
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
-  // draw text
-  text.Render(renderer, area.x, area.y, area.w, area.h);
+  // get text pos based on anchor
+  int textX = 0;
+  int textY = 0;
+
+  switch (textAnchor) {
+  case R_TOP:
+    textX = area.x + area.w / 2;
+    textY = area.y + text.GetHeight() / 2 + textPadding;
+    break;
+  case R_BOTTOM:
+    textX = area.x + area.w / 2;
+    textY = area.y + area.h - text.GetHeight() / 2 - textPadding; 
+    break;
+  case R_LEFT:
+    textX = area.x + text.GetWidth() / 2 + textPadding;
+    textY = area.y + area.h / 2;
+    break;
+  case R_RIGHT:
+    textX = area.x + area.w - text.GetWidth() / 2 - textPadding;
+    textY = area.y + area.h / 2;
+    break;
+  default:
+    // place at center by default
+    textX = area.x + area.w / 2;
+    textY = area.y + area.h  / 2;
+  }
+
+  // draw icon at center if there is one
+  if (icon != NULL) {
+    icon->Render(renderer, area.x + area.w / 2, area.y + area.h / 2, NULL,
+                 true);
+  }
+
+  this->text.Render(renderer, textX, textY, NULL, true); 
 }
 
 RVerticalLayoutGroup::RVerticalLayoutGroup() {
