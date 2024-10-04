@@ -16,6 +16,8 @@ public:
                             Uint8 b = 255);
 #endif
 
+  static void SetGlobalScale(float scale);
+
   bool LoadFromFile(SDL_Renderer *renderer, const char *path, Uint8 r = 0,
                     Uint8 g = 0, Uint8 b = 0);
   void Free();
@@ -34,6 +36,7 @@ public:
   int GetHeight();
   int GetWidthUnscaled();
   int GetHeightUnscaled();
+  float GetScale();
   SDL_Rect *GetRect();
   void SetScale(int nScale);
 
@@ -44,6 +47,8 @@ private:
   int width;
   int height;
   int scale;
+
+  static float globalScale;
 };
 
 #endif

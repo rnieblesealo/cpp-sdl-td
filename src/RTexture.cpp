@@ -12,7 +12,16 @@ RTexture::RTexture() {
   renderDest.y = 0;
   renderDest.w = 0;
   renderDest.h = 0;
+
+  // set global scale if instantiating new texture
+  if (RTexture::globalScale <= 0) {
+    RTexture::globalScale = 1;
+  }
 }
+
+float RTexture::globalScale;
+
+void RTexture::SetGlobalScale(float scale) { RTexture::globalScale = scale; }
 
 RTexture::~RTexture() { Free(); }
 
@@ -105,13 +114,13 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
   renderDest.y = y;
 
   if (clip != NULL) {
-    renderDest.w = clip->w * scale;
-    renderDest.h = clip->h * scale;
+    renderDest.w = clip->w * scale * globalScale;
+    renderDest.h = clip->h * scale * globalScale;
   }
-  
-  else{
-    renderDest.w = width * scale;
-    renderDest.h = height * scale;
+
+  else {
+    renderDest.w = width * scale * globalScale;
+    renderDest.h = height * scale * globalScale;
   }
 
   if (center) {
@@ -128,13 +137,13 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip,
   renderDest.y = y;
 
   if (clip != NULL) {
-    renderDest.w = clip->w * scale;
-    renderDest.h = clip->h * scale;
+    renderDest.w = clip->w * scale * globalScale;
+    renderDest.h = clip->h * scale * globalScale;
   }
 
   else {
-    renderDest.w = width * scale;
-    renderDest.h = height * scale;
+    renderDest.w = width * scale * globalScale;
+    renderDest.h = height * scale * globalScale;
   }
 
   SDL_RenderCopyEx(renderer, texture, clip, &renderDest, angle, center, flip);
@@ -153,7 +162,7 @@ void RTexture::Render(SDL_Renderer *renderer, int x, int y, int w, int h,
 
 int RTexture::GetWidth() {
   if (renderDest.w == width || renderDest.w == 0) {
-    return width * scale;
+    return width * scale * globalScale;
   }
 
   return renderDest.w;
@@ -161,7 +170,7 @@ int RTexture::GetWidth() {
 
 int RTexture::GetHeight() {
   if (renderDest.h == height || renderDest.h == 0) {
-    return height * scale;
+    return height * scale * globalScale;
   }
 
   return renderDest.h;
@@ -171,8 +180,10 @@ int RTexture::GetWidthUnscaled() { return width; }
 
 int RTexture::GetHeightUnscaled() { return height; }
 
-SDL_Rect *RTexture::GetRect(){
-  return &renderDest;
+float RTexture::GetScale(){
+  return scale * globalScale;
 }
+
+SDL_Rect *RTexture::GetRect() { return &renderDest; }
 
 void RTexture::SetScale(int nScale) { scale = nScale; }

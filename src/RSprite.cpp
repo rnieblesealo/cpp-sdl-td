@@ -27,6 +27,10 @@ int RSprite::GetWidth() { return spriteSheet->GetWidth(); }
 
 int RSprite::GetHeight() { return spriteSheet->GetHeight(); }
 
+float RSprite::GetScale(){
+  return spriteSheet->GetScale();
+}
+
 void RSprite::SetFPS(int fps) {
   if (fps < 0) {
     printf("Could not set FPS! Out of bounds.\n");

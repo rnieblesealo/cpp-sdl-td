@@ -13,13 +13,19 @@
 #include <SDL_stdinc.h>
 #include <SDL_ttf.h>
 #include <SDL_video.h>
+#include <filesystem>
 #include <algorithm>
 #include <chrono>
-#include <filesystem>
 #include <string>
 
-const int TILE_WIDTH = 128;
-const int TILE_HEIGHT = 128;
+// Make the window itself smaller; multiply final screen width by scale
+// Now everything is too big
+// The window depends on the size we give things, so make those bigger/smaller instead
+
+const float GLOB_SCALE = 0.5;
+
+const int TILE_WIDTH = 128 * GLOB_SCALE;
+const int TILE_HEIGHT = 128 * GLOB_SCALE;
 
 const int LEVEL_GRID_WIDTH = 12;
 const int LEVEL_GRID_HEIGHT = 12;
@@ -27,10 +33,10 @@ const int LEVEL_GRID_HEIGHT = 12;
 const int LEVEL_WIDTH = TILE_WIDTH * LEVEL_GRID_WIDTH;
 const int LEVEL_HEIGHT = TILE_HEIGHT * LEVEL_GRID_HEIGHT;
 
-const int GUI_WIDTH = TILE_WIDTH * 3;
+const int GUI_WIDTH = (TILE_WIDTH * 3) * GLOB_SCALE;
 
-const int SCREEN_WIDTH = LEVEL_WIDTH + GUI_WIDTH;
-const int SCREEN_HEIGHT = LEVEL_HEIGHT;
+const int SCREEN_WIDTH = (LEVEL_WIDTH + GUI_WIDTH); 
+const int SCREEN_HEIGHT = LEVEL_HEIGHT; 
 
 const int FONT_SIZE = 8;
 
@@ -223,7 +229,6 @@ int enemyTargetY = 0;
 RTexture tEnemy;
 RTexture tEnemyWeapon;
 
-
 RTexture tEnemyGreen;
 RTexture tEnemyWeaponGreen;
 
@@ -239,14 +244,14 @@ SDL_Rect cEnemyWeapon[] = {{0 * 128, 0, 128, 128}, {1 * 128, 0, 128, 128},
 RSprite sEnemy(&tEnemy, cEnemy, 1);
 RSprite sEnemyWeapon(&tEnemyWeapon, cEnemyWeapon, 8);
 
-void SpawnRedEnemy(){
-  if (amtRed <= 0){
+void SpawnRedEnemy() {
+  if (amtRed <= 0) {
     return;
   }
 
   REntity *newEnemy = new REntity(TANK, &sEnemy, &sEnemyWeapon, sfxShootEnemy);
 
-  // give path, place at beginning 
+  // give path, place at beginning
   newEnemy->SetPath(map0Path, MAP_0_PATH_LENGTH);
   newEnemy->SetPos(map0Path[0].x, map0Path[0].y);
 
@@ -259,7 +264,7 @@ void SpawnRedEnemy(){
 
   // now have one less enemy!
   amtRed--;
-  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 3).c_str());  
+  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 3).c_str());
 }
 
 // Towers
@@ -424,15 +429,17 @@ void ConfigureGUI() {
 
   graphicRedTank.SetTextPadding(25);
   graphicRedTank.SetTextScale(8);
-  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 2).c_str()); 
+  graphicRedTank.SetText(gRenderer, gFont, IntToPaddedText(amtRed, 2).c_str());
 
   graphicGreenTank.SetTextPadding(25);
   graphicGreenTank.SetTextScale(8);
-  graphicGreenTank.SetText(gRenderer, gFont, IntToPaddedText(amtGreen, 2).c_str()); 
+  graphicGreenTank.SetText(gRenderer, gFont,
+                           IntToPaddedText(amtGreen, 2).c_str());
 
   graphicYellowTank.SetTextPadding(25);
   graphicYellowTank.SetTextScale(8);
-  graphicYellowTank.SetText(gRenderer, gFont, IntToPaddedText(amtYellow, 2).c_str()); 
+  graphicYellowTank.SetText(gRenderer, gFont,
+                            IntToPaddedText(amtYellow, 2).c_str());
 
   // Button Actions
 
@@ -458,6 +465,9 @@ void ConfigureGUI() {
 
 bool LoadMedia() {
   bool success = true;
+
+  // Preliminary: Make texture global scale match ours 
+  RTexture::SetGlobalScale(GLOB_SCALE);
 
   // Fonts
 
@@ -520,8 +530,8 @@ bool LoadMedia() {
     success = false;
   }
 
-  if (!tEnemyGreen.LoadFromFile(gRenderer, (PATH_PNG / "g-tank-body.png").c_str(),
-                           255, 255, 255)) {
+  if (!tEnemyGreen.LoadFromFile(
+          gRenderer, (PATH_PNG / "g-tank-body.png").c_str(), 255, 255, 255)) {
     PrintError();
     success = false;
   }
@@ -532,8 +542,8 @@ bool LoadMedia() {
     success = false;
   }
 
-  if (!tEnemyYellow.LoadFromFile(gRenderer, (PATH_PNG / "y-tank-body.png").c_str(),
-                           255, 255, 255)) {
+  if (!tEnemyYellow.LoadFromFile(
+          gRenderer, (PATH_PNG / "y-tank-body.png").c_str(), 255, 255, 255)) {
     PrintError();
     success = false;
   }
@@ -543,7 +553,6 @@ bool LoadMedia() {
     PrintError();
     success = false;
   }
-
 
   // GUI
 

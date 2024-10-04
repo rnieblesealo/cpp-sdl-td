@@ -334,13 +334,13 @@ void REntity::RenderHealthBar(SDL_Renderer *renderer) {
     break;
   }
 
-  int barPad = 3;
-  int yCenterOffset = (float)bodySprite->GetHeight() / 2 - 15;
+  int barPad = 3 * bodySprite->GetScale();
+  int yCenterOffset = (float)bodySprite->GetHeight() / 2 - 15 * bodySprite->GetScale();
 
   SDL_Rect frame;
 
-  frame.w = 120;
-  frame.h = 15;
+  frame.w = 120 * bodySprite->GetScale();
+  frame.h = 15 * bodySprite->GetScale();
   frame.x = posX - (float)frame.w / 2;
   frame.y = posY + yCenterOffset;
 

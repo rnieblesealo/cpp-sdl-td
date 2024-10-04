@@ -13,6 +13,7 @@ public:
   int GetHeight();
   int GetWidthUnscaled();
   int GetHeightUnscaled();
+  float GetScale();
   bool GetMovedFrame();
   float GetFrameTimer();
   SDL_Rect *GetRect();
